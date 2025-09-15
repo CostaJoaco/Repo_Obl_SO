@@ -1,5 +1,7 @@
 #!/bin/bash
 
+user="  "
+
 ########################################################################
 #                            ZONA USUARIO                              #
 ########################################################################
@@ -7,7 +9,11 @@
 #pre:
 #post: retorna 0 si el usuario existe, y 1 en caso contrario
 existeUsuario(){
-    grep -q "^$1\ " users.txt
+    grep -q "^$1 " users.txt
+}
+
+passCorrecta(){
+    grep -q "^$1 $2" users.txt
 }
 
 crearUser(){
@@ -18,7 +24,7 @@ crearUser(){
     # $? toma el ultimo valor obtenido
     existe=$?
 
-    while [[ existe -eq 0 ]]; do
+    while [[ "$usuario" =~ [\ ] ]] || [[ $existe -eq 0 ]]; do
         echo -e "Usuario inválido, ingresar un nombre de usuario distinito"
         read -r usuario
         existeUsuario "$usuario"
@@ -34,28 +40,85 @@ crearUser(){
     done
 
     echo "$usuario $pass" >> users.txt
+    clear
+    echo "Usuario agregado exitosamente"
+}
+
+cambiarPass(){
+    echo -e "¿Desea cambiar una contraseña? \n1) Si \nOtro) No"
+    read -r quiere
+    while [[ "$quiere" -eq 1 ]]; do
+        login
+        ingreso=$?
+
+        if [[ "$ingreso" -eq 0 ]]; then
+            echo -e "Ingresar la nueva contraseña: "
+            read -r nueva
+
+            sed -i "/^$user/c\\$user $nueva" users.txt
+        fi
+
+        echo -e "¿Desea cambiar una contraseña? \n1) Si \nOtro) No"
+        read -r quiere
+    done
+    clear
+}
+
+login(){
+    echo -e "Ingrese nombre de usuario: "
+    read -r usuario
+
+    existeUsuario $usuario
+    existe=$?
+
+    if [[ "$existe" -eq 0 ]]; then
+        echo -e "Ingrese la constraseña: "
+        read -r pass
+
+        passCorrecta $usuario $pass
+        valido=$?
+
+        if [[ "$valido" -eq 0 ]]; then
+            user=$usuario
+            echo "Ingreso exitoso"
+            return 0
+        else 
+            clear
+            echo "Contraseña incorrecta"
+            return 1
+        fi
+    else
+        clear
+        echo "Usuario no encontrado"
+        return 1
+    fi
 }
 
 usuario(){
     opcion=0
     while [[ $opcion -ne 5 ]]; do
-        echo -e "Seleccionar una opciÓn: \n1) Crear usuario \n2) Cambiar contraseña \n3) Login \n4) Logout \n5) Salir"
+        echo -e "Seleccionar una opción: \n1) Crear usuario \n2) Cambiar contraseña \n3) Login \n4) Logout \n5) Menú"
         read -r opcion
 
         if [[ $opcion -eq 1 ]]; then
+            clear
             crearUser
         elif [[ $opcion -eq 2 ]]; then
+            clear
             cambiarPass
         elif [[ $opcion -eq 3 ]]; then
+            clear
             login
         elif [[ $opcion -eq 4 ]]; then
+            clear
             logout
         elif [[ $opcion -eq 5 ]]; then
-            echo "Sesión finalizada"
+            echo "Voler al menú"
         else
-            echo "Opcion incorrecta, seleccione un valor válido"
+            echo "Opción incorrecta, seleccione un valor válido"
         fi
     done
+    clear
 }
 
 ingProd(){
@@ -74,24 +137,37 @@ crearRepo(){
     echo "5"
 }
 
+
+########################################################################
+#                          MENU PRINCIPAL                              #
+########################################################################
+
+
 while [[ $opcion -ne 6 ]]; do
     opcion=0
     echo -e "Seleccionar una opciÓn: \n1) Usuario \n2) Ingresar producto \n3) Vender producto \n4) Filtro de productos \n5) Crear reporte de pinturas \n6) Salir"
     read -r opcion
 
     if [[ $opcion -eq 1 ]]; then
+        clear
         usuario
     elif [[ $opcion -eq 2 ]]; then
+        clear
         ingProd
     elif [[ $opcion -eq 3 ]]; then
+        clear
         vendProd
     elif [[ $opcion -eq 4 ]]; then
+        clear
         filterProd
     elif [[ $opcion -eq 5 ]]; then
+        clear
         crearRepo
     elif [[ $opcion -eq 6 ]]; then
+        clear
         echo "Sesión finalizada"
     else
+        clear
         echo "Opcion incorrecta, seleccione un valor válido"
     fi
 done
