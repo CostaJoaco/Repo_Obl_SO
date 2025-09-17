@@ -126,7 +126,19 @@ usuario(){
 ########################################################################
 
 ingProd(){
-    echo "2"
+    echo "Ingrese El Tipo de producto: "
+    read -r tipo
+    echo "Ingrese El Modelo del producto: "
+    read -r modelo
+    echo "Ingrese La Descripcion del producto: "
+    read -r desc
+    echo "Ingrese La Cantidad del producto: "
+    read -r cant
+    echo "Ingrese El Precio del producto: "
+    read -r precio
+    codigo=$(echo "${tipo:0:3}" | tr '[:lower:]' '[:upper:]') # Extraer las 3 primeras letras de tipo y convertirlas a mayúsculas (Codigo consegudido con ayuda de IA)
+    echo "$codigo - $tipo - $modelo - $desc - $cant -$ $precio" >> productos.csv
+    echo "Producto ingresado exitosamente"
 }
 
 vendProd(){
