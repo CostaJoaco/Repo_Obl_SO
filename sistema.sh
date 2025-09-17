@@ -172,7 +172,12 @@ echo "#                          MENU PRINCIPAL                              #"
 echo -e "########################################################################\e[0m"
 echo 
     opcion=0
-    echo -e "Seleccionar una opciÓn: \n1) Usuario \n2) Ingresar producto \n3) Vender producto \n4) Filtro de productos \n5) Crear reporte de pinturas \n6) Salir"
+    echo -e "Seleccionar una opción: \n\n\e[1;32m 1) \e[0m Usuario 
+                                     \n\e[1;32m 2) \e[0m Ingresar producto 
+                                     \n\e[1;32m 3) \e[0m Vender producto 
+                                     \n\e[1;32m 4) \e[0m Filtro de productos 
+                                     \n\e[1;32m 5) \e[0m Crear reporte de pinturas 
+                                     \n\e[1;32m 6) \e[0m Salir"
     read -r opcion
 
     if [[ "$opcion" -eq 1 ]]; then
