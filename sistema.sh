@@ -155,8 +155,25 @@ ingProd(){
     echo "Ingrese El Precio del producto: "
     read -r precio
     codigo=$(echo "$tipo:0:3" | tr '[:lower:]' '[:upper:]') # Extraer las 3 primeras letras de tipo y convertirlas a mayúsculas (Codigo consegudido con ayuda de IA)
-    echo "$codigo - $tipo - $modelo - $desc - $cant -$ $precio" >> productos.csv
+   
+    while IFS= read -r line; do
+        tipo2=$("$line" | awk -F'-' '{print $2}' | xargs) 
+        modelo2=$("$line" | awk -F'-' '{print $3}' | xargs)
+        precio2=$("$line" | awk -F'-' '{print $6}' | xargs)
+        if [[ "$tipo2" == "$tipo" && "$modelo2" == "$modelo" ]]; then
+            echo "El producto ya existe, se actualizo la cantidad"
+            # Codigo de actualizacion de cantidad
+            return
+        fi
+        ((iter++))
+    done < productos.csv
+    echo "$codigo - $tipo - $modelo - $desc - $cant -$ $precio" 
+    funcIng ( $codigo, $tipo, $modelo, $desc, $cant, $precio)
     echo "Producto ingresado exitosamente"
+}
+funcIng($codigo, $tipo, $modelo, $desc, $cant, $precio){
+    echo " $codigo , $tipo , $modelo , $desc , $cant , $precio " >> productos.csv
+
 }
 
 vendProd(){
