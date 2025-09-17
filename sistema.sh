@@ -94,6 +94,16 @@ login(){
     fi
 }
 
+logout(){
+    clear
+    if [[ "$user" -ne "  " ]]; then
+        user="  "
+        echo "Sesión cerrada exitosamente"
+    else
+        echo "Debe ingresar sesión previamente"
+    fi
+}
+
 usuario(){
     opcion=0
     while [[ "$opcion" -ne 5 ]]; do
