@@ -94,25 +94,35 @@ login(){
     fi
 }
 
+logout(){
+    clear
+    if [[ "$user" -ne "  " ]]; then
+        user="  "
+        echo "Sesión cerrada exitosamente"
+    else
+        echo "Debe ingresar sesión previamente"
+    fi
+}
+
 usuario(){
     opcion=0
-    while [[ $opcion -ne 5 ]]; do
+    while [[ "$opcion" -ne 5 ]]; do
         echo -e "Seleccionar una opción: \n1) Crear usuario \n2) Cambiar contraseña \n3) Login \n4) Logout \n5) Menú"
         read -r opcion
 
-        if [[ $opcion -eq 1 ]]; then
+        if [[ "$opcion" -eq 1 ]]; then
             clear
             crearUser
-        elif [[ $opcion -eq 2 ]]; then
+        elif [[ "$opcion" -eq 2 ]]; then
             clear
             cambiarPass
-        elif [[ $opcion -eq 3 ]]; then
+        elif [[ "$opcion" -eq 3 ]]; then
             clear
             login
-        elif [[ $opcion -eq 4 ]]; then
+        elif [[ "$opcion" -eq 4 ]]; then
             clear
             logout
-        elif [[ $opcion -eq 5 ]]; then
+        elif [[ "$opcion" -eq 5 ]]; then
             echo "Voler al menú"
         else
             echo "Opción incorrecta, seleccione un valor válido"
