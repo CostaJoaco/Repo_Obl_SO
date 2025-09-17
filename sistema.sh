@@ -1,6 +1,6 @@
 #!/bin/bash
 
-user="  "
+user=" 1233 "
 
 ########################################################################
 #                            ZONA USUARIO                              #
@@ -106,13 +106,17 @@ logout(){
 
 usuario(){
     opcion=0
-    echo "########################################################################"
-    echo "#                           MENÚ USUARIO                               #"
-    echo "########################################################################"
+    echo -e "\e[1;32m########################################################################"
+    echo "#                            MENU USUARIO                              #"
+    echo -e "########################################################################\e[0m"
     echo 
     
     while [[ "$opcion" -ne 5 ]]; do
-        echo -e "Seleccionar una opción: \n1) Crear usuario \n2) Cambiar contraseña \n3) Login \n4) Logout \n5) Menú"
+        echo -e "Seleccionar una opción: \n\n\e[1;32m 1) \e[0m Crear usuario 
+                                         \n\e[1;32m 2) \e[0m Cambiar contraseña 
+                                         \n\e[1;32m 3) \e[0m Login 
+                                         \n\e[1;32m 4) \e[0m Logout 
+                                         \n\e[1;32m 5) \e[0m Menú"
         read -r opcion
 
         if [[ "$opcion" -eq 1 ]]; then
@@ -141,9 +145,9 @@ usuario(){
 ########################################################################
 
 ingProd(){
-    echo "########################################################################"
+    echo -e "\e[1;32m########################################################################"
     echo "#                              PRODUCTO                                #"
-    echo "########################################################################"
+    echo -e "########################################################################\e[0m"
     echo "Ingrese El Tipo de producto: "
     read -r tipo
     echo "Ingrese El Modelo del producto: "
@@ -160,9 +164,9 @@ ingProd(){
 }
 
 vendProd(){
-    echo "########################################################################"
+    echo -e "\e[1;32m########################################################################"
     echo "#                               VENTA                                 #"
-    echo "########################################################################"
+    echo -e "########################################################################\e[0m"
     iter=1
     while IFS= read -r line; do
         tipo=$(echo "$line" | awk -F'-' '{print $2}' | xargs) # xargs funciona como trim en java y awk extrae una columna del csv
@@ -172,8 +176,6 @@ vendProd(){
         ((iter++))
     done < productos.csv
 }
-
-
 
 filterProd(){
     echo "4"
@@ -197,49 +199,56 @@ validarLogin() {
     fi
 }
 
+menuPrincipal(){
+    
+    clear
+    while [[ "$opcion" -ne 6 ]]; do
+    echo -e "\e[1;32m########################################################################"
+    echo "#                          MENU PRINCIPAL                              #"
+    echo -e "########################################################################\e[0m"
+    echo 
+        opcion=0
+        echo -e "Seleccionar una opción: \n\n\e[1;32m 1) \e[0m Usuario 
+                                        \n\e[1;32m 2) \e[0m Ingresar producto 
+                                        \n\e[1;32m 3) \e[0m Vender producto 
+                                        \n\e[1;32m 4) \e[0m Filtro de productos 
+                                        \n\e[1;32m 5) \e[0m Crear reporte de pinturas 
+                                        \n\e[1;32m 6) \e[0m Salir"
+        read -r opcion
 
-while [[ "$opcion" -ne 6 ]]; do
-echo -e "\e[1;32m########################################################################"
-echo "#                          MENU PRINCIPAL                              #"
-echo -e "########################################################################\e[0m"
-echo 
-    opcion=0
-    echo -e "Seleccionar una opción: \n\n\e[1;32m 1) \e[0m Usuario 
-                                     \n\e[1;32m 2) \e[0m Ingresar producto 
-                                     \n\e[1;32m 3) \e[0m Vender producto 
-                                     \n\e[1;32m 4) \e[0m Filtro de productos 
-                                     \n\e[1;32m 5) \e[0m Crear reporte de pinturas 
-                                     \n\e[1;32m 6) \e[0m Salir"
-    read -r opcion
-
-    if [[ "$opcion" -eq 1 ]]; then
-        clear
-        usuario
-    elif [[ "$opcion" -eq 6 ]]; then
-        clear
-        echo "Sesión finalizada"
-    elif validarLogin ; then
-            if [[ "$opcion" -eq 2 ]]; then
-                clear
-                ingProd
-            elif [[ "$opcion" -eq 3 ]]; then
-                clear
-                vendProd
-            elif [[ "$opcion" -eq 4 ]]; then
-                clear
-                filterProd
-            elif [[ "$opcion" -eq 5 ]]; then
-                clear
-                crearRepo
-            fi
-    else
-        clear
-        if validarLogin ; then
-            echo "Opcion incorrecta, seleccione un valor válido"
-        else
+        if [[ "$opcion" -eq 1 ]]; then
+            clear
+            usuario
+        elif [[ "$opcion" -eq 6 ]]; then
+            clear
             echo -e "\e[1;31m--------------------------"
-            echo "|   usuario incorrecto   |"
-            echo -e "--------------------------\e[0m"
+                echo "|   sesion finalizada    |"
+                echo -e "--------------------------\e[0m"
+        elif validarLogin ; then
+                if [[ "$opcion" -eq 2 ]]; then
+                    clear
+                    ingProd
+                elif [[ "$opcion" -eq 3 ]]; then
+                    clear
+                    vendProd
+                elif [[ "$opcion" -eq 4 ]]; then
+                    clear
+                    filterProd
+                elif [[ "$opcion" -eq 5 ]]; then
+                    clear
+                    crearRepo
+                fi
+        else
+            clear
+            if validarLogin ; then
+                echo "Opcion incorrecta, seleccione un valor válido"
+            else
+                echo -e "\e[1;31m--------------------------"
+                echo "|   usuario incorrecto   |"
+                echo -e "--------------------------\e[0m"
+            fi
         fi
-    fi
-done
+    done
+}
+
+menuPrincipal;
