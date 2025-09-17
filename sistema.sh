@@ -96,23 +96,23 @@ login(){
 
 usuario(){
     opcion=0
-    while [[ $opcion -ne 5 ]]; do
+    while [[ "$opcion" -ne 5 ]]; do
         echo -e "Seleccionar una opción: \n1) Crear usuario \n2) Cambiar contraseña \n3) Login \n4) Logout \n5) Menú"
         read -r opcion
 
-        if [[ $opcion -eq 1 ]]; then
+        if [[ "$opcion" -eq 1 ]]; then
             clear
             crearUser
-        elif [[ $opcion -eq 2 ]]; then
+        elif [[ "$opcion" -eq 2 ]]; then
             clear
             cambiarPass
-        elif [[ $opcion -eq 3 ]]; then
+        elif [[ "$opcion" -eq 3 ]]; then
             clear
             login
-        elif [[ $opcion -eq 4 ]]; then
+        elif [[ "$opcion" -eq 4 ]]; then
             clear
             logout
-        elif [[ $opcion -eq 5 ]]; then
+        elif [[ "$opcion" -eq 5 ]]; then
             echo "Voler al menú"
         else
             echo "Opción incorrecta, seleccione un valor válido"
@@ -147,31 +147,46 @@ crearRepo(){
 ########################################################################
 
 
-while [[ $opcion -ne 6 ]]; do
+validarLogin() {
+    if [[ $user -ne "  " ]]; then
+        return 0  # éxito
+    else
+        return 1  # error
+    fi
+}
+
+
+while [[ "$opcion" -ne 6 ]]; do
     opcion=0
     echo -e "Seleccionar una opciÓn: \n1) Usuario \n2) Ingresar producto \n3) Vender producto \n4) Filtro de productos \n5) Crear reporte de pinturas \n6) Salir"
     read -r opcion
 
-    if [[ $opcion -eq 1 ]]; then
+    if [[ "$opcion" -eq 1 ]]; then
         clear
         usuario
-    elif [[ $opcion -eq 2 ]]; then
-        clear
-        ingProd
-    elif [[ $opcion -eq 3 ]]; then
-        clear
-        vendProd
-    elif [[ $opcion -eq 4 ]]; then
-        clear
-        filterProd
-    elif [[ $opcion -eq 5 ]]; then
-        clear
-        crearRepo
-    elif [[ $opcion -eq 6 ]]; then
+    elif [[ "$opcion" -eq 6 ]]; then
         clear
         echo "Sesión finalizada"
+    elif validarLogin ; then
+            if [[ "$opcion" -eq 2 ]]; then
+                clear
+                ingProd
+            elif [[ "$opcion" -eq 3 ]]; then
+                clear
+                vendProd
+            elif [[ "$opcion" -eq 4 ]]; then
+                clear
+                filterProd
+            elif [[ "$opcion" -eq 5 ]]; then
+                clear
+                crearRepo
+            fi
     else
         clear
-        echo "Opcion incorrecta, seleccione un valor válido"
+        if validarLogin ; then
+            echo "Opcion incorrecta, seleccione un valor válido"
+        else
+            echo "usuario incorrecto"
+        fi
     fi
 done
