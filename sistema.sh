@@ -126,6 +126,9 @@ usuario(){
 ########################################################################
 
 ingProd(){
+    echo "########################################################################"
+    echo "#                              PRODUCTO                                #"
+    echo "########################################################################"
     echo "Ingrese El Tipo de producto: "
     read -r tipo
     echo "Ingrese El Modelo del producto: "
@@ -136,14 +139,26 @@ ingProd(){
     read -r cant
     echo "Ingrese El Precio del producto: "
     read -r precio
-    codigo=$(echo "${tipo:0:3}" | tr '[:lower:]' '[:upper:]') # Extraer las 3 primeras letras de tipo y convertirlas a mayúsculas (Codigo consegudido con ayuda de IA)
+    codigo=$(echo "$tipo:0:3" | tr '[:lower:]' '[:upper:]') # Extraer las 3 primeras letras de tipo y convertirlas a mayúsculas (Codigo consegudido con ayuda de IA)
     echo "$codigo - $tipo - $modelo - $desc - $cant -$ $precio" >> productos.csv
     echo "Producto ingresado exitosamente"
 }
 
 vendProd(){
-    echo "3"
+    echo "########################################################################"
+    echo "#                               VENTA                                 #"
+    echo "########################################################################"
+    iter=1
+    while IFS= read -r line; do
+        tipo=$(echo "$line" | awk -F'-' '{print $2}' | xargs) # xargs funciona como trim en java y awk extrae una columna del csv
+        modelo=$(echo "$line" | awk -F'-' '{print $3}' | xargs)
+        precio=$(echo "$line" | awk -F'-' '{print $6}' | xargs)
+        echo "$iter) $tipo - $modelo - $precio"
+        ((iter++))
+    done < productos.csv
 }
+
+
 
 filterProd(){
     echo "4"
