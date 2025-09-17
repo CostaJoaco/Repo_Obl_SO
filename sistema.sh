@@ -106,6 +106,11 @@ logout(){
 
 usuario(){
     opcion=0
+    echo "########################################################################"
+    echo "#                           MENÚ USUARIO                               #"
+    echo "########################################################################"
+    echo 
+    
     while [[ "$opcion" -ne 5 ]]; do
         echo -e "Seleccionar una opción: \n1) Crear usuario \n2) Cambiar contraseña \n3) Login \n4) Logout \n5) Menú"
         read -r opcion
