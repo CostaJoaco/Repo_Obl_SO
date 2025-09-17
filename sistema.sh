@@ -176,7 +176,62 @@ vendProd(){
 
 
 filterProd(){
-    echo "4"
+    echo -e "\e[1;32m########################################################################"
+    echo "#                          BUSCAR PRODUCTO                              #"
+    echo -e "########################################################################\e[0m"
+    echo
+
+    echo -e "Seleccionar un filtro: \n\n\e[1;32m 0) \e[0m Sin filtro
+                                    \n\e[1;32m 1) \e[0m Base 
+                                    \n\e[1;32m 2) \e[0m Layer 
+                                    \n\e[1;32m 3) \e[0m Shade
+                                    \n\e[1;32m 4) \e[0m Dry 
+                                    \n\e[1;32m 5) \e[0m Contrast
+                                    \n\e[1;32m 6) \e[0m Technical
+                                    \n\e[1;32m 7) \e[0m Texture
+                                    \n\e[1;32m 8) \e[0m Mediums"
+    read -r opcion
+    
+    filtro=''
+    if [[ "$opcion" -eq 1 ]]; then
+        filtro="Base"
+    elif [[ "$opcion" -eq 2 ]]; then
+        filtro="Layer"
+    elif [[ "$opcion" -eq 3 ]]; then
+        filtro="Shade"
+    elif [[ "$opcion" -eq 4 ]]; then
+        filtro="Dry"
+    elif [[ "$opcion" -eq 5 ]]; then
+        filtro="Contrast"
+    elif [[ "$opcion" -eq 6 ]]; then
+        filtro="Technical"
+    elif [[ "$opcion" -eq 7 ]]; then
+        filtro="Texture"
+    elif [[ "$opcion" -eq 8 ]]; then
+        filtro="Mediums"
+    fi
+
+    if [[ "$filtro" -eq '' ]]; then
+        while IFS= read -r line; do
+            tipo=$(echo "$line" | awk -F'-' '{print $2}' | xargs) # xargs funciona como trim en java y awk extrae una columna del csv
+            modelo=$(echo "$line" | awk -F'-' '{print $3}' | xargs)
+            precio=$(echo "$line" | awk -F'-' '{print $6}' | xargs)
+            echo "$iter) $tipo - $modelo - $precio"
+            ((iter++))
+        done < productos.csv
+    else
+        while IFS= read -r line; do
+            tipo=$(echo "$line" | awk -F'-' '{print $2}' | xargs) # xargs funciona como trim en java y awk extrae una columna del csv
+            if [[ "$filtro" -eq "$tipo" ]]; then
+                modelo=$(echo "$line" | awk -F'-' '{print $3}' | xargs)
+                precio=$(echo "$line" | awk -F'-' '{print $6}' | xargs)
+                echo "$iter) $tipo - $modelo - $precio"
+                ((iter++))
+            fi
+        done < productos.csv
+    fi
+
+
 }
 
 crearRepo(){
