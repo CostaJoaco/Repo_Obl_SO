@@ -172,6 +172,10 @@ validarLogin() {
 
 
 while [[ "$opcion" -ne 6 ]]; do
+echo -e "\e[1;32m########################################################################"
+echo "#                          MENU PRINCIPAL                              #"
+echo -e "########################################################################\e[0m"
+echo 
     opcion=0
     echo -e "Seleccionar una opciÓn: \n1) Usuario \n2) Ingresar producto \n3) Vender producto \n4) Filtro de productos \n5) Crear reporte de pinturas \n6) Salir"
     read -r opcion
@@ -201,7 +205,9 @@ while [[ "$opcion" -ne 6 ]]; do
         if validarLogin ; then
             echo "Opcion incorrecta, seleccione un valor válido"
         else
-            echo "usuario incorrecto"
+            echo -e "\e[1;31m--------------------------"
+            echo "|   usuario incorrecto   |"
+            echo -e "--------------------------\e[0m"
         fi
     fi
 done
