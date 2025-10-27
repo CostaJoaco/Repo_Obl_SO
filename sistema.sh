@@ -1,7 +1,6 @@
 #!/bin/bash
 
-user=" 1233 "
-
+trap 'rm -f session.tmp' EXIT
 ########################################################################
 #                            ZONA USUARIO                              #
 ########################################################################
@@ -79,7 +78,7 @@ login(){
         valido=$?
 
         if [[ "$valido" -eq 0 ]]; then
-            user=$usuario
+            echo "$usuario" > session.tmp
             echo "Ingreso exitoso"
             return 0
         else 
@@ -97,7 +96,7 @@ login(){
 logout(){
     clear
     if [[ "$user" -ne "  " ]]; then
-        user="  "
+        rm -f session.tmp
         echo "Sesión cerrada exitosamente"
     else
         echo "Debe ingresar sesión previamente"
@@ -172,11 +171,11 @@ ingProd(){
         ((iter++))
     done < productos.csv
     echo "$codigo - $tipo - $modelo - $desc - $cant -$ $precio" 
-    funcIng ( $codigo, $tipo, $modelo, $desc, $cant, $precio)
+    funcIng $codigo $tipo $modelo $desc $cant $precio
     echo "Producto ingresado exitosamente"
 }
-funcIng($codigo, $tipo, $modelo, $desc, $cant, $precio){
-    echo " $codigo , $tipo , $modelo , $desc , $cant , $precio " >> productos.csv
+funcIng(){
+    echo " $1 , $2 , $3 , $4 , $5 , $6 " >> productos.csv
 
 }
 
@@ -264,7 +263,7 @@ crearRepo(){
 
 
 validarLogin() {
-    if [[ $user -ne "  " ]]; then
+    if [[ -s session.tmp ]]; then
         return 0  # éxito
     else
         return 1  # error
