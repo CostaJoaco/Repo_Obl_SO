@@ -143,40 +143,62 @@ usuario(){
 #                         FIN ZONA USUARIO                             #
 ########################################################################
 
-ingProd(){
-    echo -e "\e[1;32m########################################################################"
-    echo "#                              PRODUCTO                                #"
-    echo -e "########################################################################\e[0m"
-    echo "Ingrese El Tipo de producto: "
-    read -r tipo
-    echo "Ingrese El Modelo del producto: "
-    read -r modelo
-    echo "Ingrese La Descripcion del producto: "
-    read -r desc
-    echo "Ingrese La Cantidad del producto: "
-    read -r cant
-    echo "Ingrese El Precio del producto: "
-    read -r precio
-    codigo=$(echo "$tipo:0:3" | tr '[:lower:]' '[:upper:]') # Extraer las 3 primeras letras de tipo y convertirlas a mayúsculas (Codigo consegudido con ayuda de IA)
-   
-    while IFS= read -r line; do
-        tipo2=$("$line" | awk -F'-' '{print $2}' | xargs) 
-        modelo2=$("$line" | awk -F'-' '{print $3}' | xargs)
-        precio2=$("$line" | awk -F'-' '{print $6}' | xargs)
-        if [[ "$tipo2" == "$tipo" && "$modelo2" == "$modelo" ]]; then
-            echo "El producto ya existe, se actualizo la cantidad"
-            # Codigo de actualizacion de cantidad
-            return
-        fi
-        ((iter++))
-    done < productos.csv
-    echo "$codigo - $tipo - $modelo - $desc - $cant -$ $precio" 
-    funcIng $codigo $tipo $modelo $desc $cant $precio
-    echo "Producto ingresado exitosamente"
-}
-funcIng(){
-    echo " $1 , $2 , $3 , $4 , $5 , $6 " >> productos.csv
+ingProd() {
+  echo -e "\e[1;32m###############################################"
+  echo "# PRODUCTO #"
+  echo -e "###############################################\e[0m"
 
+  echo "Ingrese el tipo de producto: "
+  read -r tipo
+  echo "Ingrese el modelo del producto: "
+  read -r modelo
+  echo "Ingrese la descripcion del producto: "
+  read -r desc
+
+  # Validacion de cantidad
+  cant=0
+  while [[ "$cant" -le 0 ]]; do
+    echo "Ingrese la cantidad del producto: "
+    read -r cant
+    if [[ "$cant" -le 0 ]]; then
+      echo -e "\e[1;31mCantidad invalida, debe ser mayor a 0\e[0m"
+    fi
+  done
+
+  # Validacion de precio
+  precio=0
+  while [[ "$precio" -le 0 ]]; do
+    echo "Ingrese el precio del producto: "
+    read -r precio
+    if [[ "$precio" -le 0 ]]; then
+      echo -e "\e[1;31mPrecio invalido, debe ser mayor a 0\e[0m"
+    fi
+  done
+  # generammos el codigo (las 3 primeras letras del tipo)
+  codigo=$(echo "${tipo:0:3}" | tr '[:lower:]' '[:upper:]' | xargs)
+
+  # Verificamos si el producto ya existe
+  existe=0
+  while IFS= read -r line; do
+    tipo2=$(echo "$line" | awk -F',' '{print $2}' | xargs)
+    modelo2=$(echo "$line" | awk -F',' '{print $3}' | xargs)
+    if [[ "$tipo2" == "$tipo" && "$modelo2" == "$modelo" ]]; then
+      echo "El producto ya existe, se actualizo la cantidad"
+      existe=1
+      break
+    fi
+  done < productos.csv
+
+  if [[ "$existe" -eq 0 ]]; then
+    echo "$codigo - $tipo - $modelo - $desc - $cant - \$${precio}"
+    funcIng "$codigo" "$tipo" "$modelo" "$desc" "$cant" "$precio"
+    echo "Producto ingresado exitosamente"
+  fi
+}
+  
+funcIng() {
+  # guarda los datos en el archivo productos.csv
+  echo "$1,$2,$3,$4,$5,$6" >> productos.csv
 }
 
 vendProd(){
@@ -185,15 +207,15 @@ vendProd(){
     echo -e "########################################################################\e[0m"
     iter=1
     while IFS= read -r line; do
-        tipo=$(echo "$line" | awk -F'-' '{print $2}' | xargs) # xargs funciona como trim en java y awk extrae una columna del csv
-        modelo=$(echo "$line" | awk -F'-' '{print $3}' | xargs)
-        precio=$(echo "$line" | awk -F'-' '{print $6}' | xargs)
-        echo "$iter) $tipo - $modelo - $precio"
+        tipo=$(echo "$line" | awk -F',' '{print $2}' | xargs) # xargs funciona como trim en java y awk extrae una columna del csv
+        modelo=$(echo "$line" | awk -F',' '{print $3}' | xargs)
+        precio=$(echo "$line" | awk -F',' '{print $6}' | xargs)
+        echo "$iter) $tipo - $modelo - \$${precio}"
         ((iter++))
     done < productos.csv
 }
 
-filterProd(){
+filterProd() {
     echo -e "\e[1;32m########################################################################"
     echo "#                          BUSCAR PRODUCTO                              #"
     echo -e "########################################################################\e[0m"
@@ -209,7 +231,7 @@ filterProd(){
                                     \n\e[1;32m 7) \e[0m Texture
                                     \n\e[1;32m 8) \e[0m Mediums"
     read -r opcion
-    
+
     filtro=''
     if [[ "$opcion" -eq 1 ]]; then
         filtro="Base"
@@ -229,29 +251,29 @@ filterProd(){
         filtro="Mediums"
     fi
 
-    if [[ "$filtro" -eq '' ]]; then
+    iter=1
+    if [[ "$filtro" == '' ]]; then
         while IFS= read -r line; do
-            tipo=$(echo "$line" | awk -F'-' '{print $2}' | xargs) # xargs funciona como trim en java y awk extrae una columna del csv
-            modelo=$(echo "$line" | awk -F'-' '{print $3}' | xargs)
-            precio=$(echo "$line" | awk -F'-' '{print $6}' | xargs)
-            echo "$iter) $tipo - $modelo - $precio"
+            tipo=$(echo "$line" | awk -F',' '{print $2}' | xargs)
+            modelo=$(echo "$line" | awk -F',' '{print $3}' | xargs)
+            precio=$(echo "$line" | awk -F',' '{print $6}' | xargs)
+            echo "$iter) $tipo - $modelo - \$${precio}"
             ((iter++))
         done < productos.csv
     else
         while IFS= read -r line; do
-            tipo=$(echo "$line" | awk -F'-' '{print $2}' | xargs) # xargs funciona como trim en java y awk extrae una columna del csv
-            if [[ "$filtro" -eq "$tipo" ]]; then
-                modelo=$(echo "$line" | awk -F'-' '{print $3}' | xargs)
-                precio=$(echo "$line" | awk -F'-' '{print $6}' | xargs)
-                echo "$iter) $tipo - $modelo - $precio"
+            tipo=$(echo "$line" | awk -F',' '{print $2}' | xargs)
+            if [[ "$filtro" == "$tipo" ]]; then
+                modelo=$(echo "$line" | awk -F',' '{print $3}' | xargs)
+                precio=$(echo "$line" | awk -F',' '{print $6}' | xargs)
+                echo "$iter) $tipo - $modelo - \$${precio}"
                 ((iter++))
             fi
         done < productos.csv
     fi
-
-
 }
 
+# TODO: Implementar la funcion crearRepo
 crearRepo(){
     echo "5"
 }
