@@ -171,8 +171,8 @@ ingProd(){
     funcIng ( $codigo, $tipo, $modelo, $desc, $cant, $precio)
     echo "Producto ingresado exitosamente"
 }
-funcIng($codigo, $tipo, $modelo, $desc, $cant, $precio){
-    echo " $codigo , $tipo , $modelo , $desc , $cant , $precio " >> productos.csv
+funcIng (){
+    echo " $1 , $2 , $3 , $4 , $5 , $6 " >> productos.csv
 
 }
 
