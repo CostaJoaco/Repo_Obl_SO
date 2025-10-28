@@ -2,3 +2,5 @@
 admin admin
 asd asd
 toto112 toto112
+zequi contraseña
+pepe pepe

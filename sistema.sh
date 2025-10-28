@@ -1,7 +1,6 @@
 #!/bin/bash
 
-user="  "
-
+trap 'rm -f session.tmp' EXIT
 ########################################################################
 #                            ZONA USUARIO                              #
 ########################################################################
@@ -79,7 +78,7 @@ login(){
         valido=$?
 
         if [[ "$valido" -eq 0 ]]; then
-            user=$usuario
+            echo "$usuario" > session.tmp
             echo "Ingreso exitoso"
             return 0
         else 
@@ -97,7 +96,7 @@ login(){
 logout(){
     clear
     if [[ "$user" -ne "  " ]]; then
-        user="  "
+        rm -f session.tmp
         echo "Sesión cerrada exitosamente"
     else
         echo "Debe ingresar sesión previamente"
@@ -106,13 +105,17 @@ logout(){
 
 usuario(){
     opcion=0
-    echo "########################################################################"
-    echo "#                           MENÚ USUARIO                               #"
-    echo "########################################################################"
+    echo -e "\e[1;32m########################################################################"
+    echo "#                            MENU USUARIO                              #"
+    echo -e "########################################################################\e[0m"
     echo 
     
     while [[ "$opcion" -ne 5 ]]; do
-        echo -e "Seleccionar una opción: \n1) Crear usuario \n2) Cambiar contraseña \n3) Login \n4) Logout \n5) Menú"
+        echo -e "Seleccionar una opción: \n\n\e[1;32m 1) \e[0m Crear usuario 
+                                         \n\e[1;32m 2) \e[0m Cambiar contraseña 
+                                         \n\e[1;32m 3) \e[0m Login 
+                                         \n\e[1;32m 4) \e[0m Logout 
+                                         \n\e[1;32m 5) \e[0m Menú"
         read -r opcion
 
         if [[ "$opcion" -eq 1 ]]; then
@@ -174,25 +177,85 @@ ingProd(){
 funcIng (){
     echo " $1 , $2 , $3 , $4 , $5 , $6 " >> productos.csv
 
+    echo "Ingrese el tipo de producto: "
+    read -r tipo
+    echo "Ingrese el modelo del producto: "
+    read -r modelo
+    echo "Ingrese la descripcion del producto: "
+    read -r desc
+
+    # Validacion de cantidad
+    cant=0
+    while [[ "$cant" -le 0 ]]; do
+        echo "Ingrese la cantidad del producto: "
+        read -r cant
+        if [[ "$cant" -le 0 ]]; then
+        echo -e "\e[1;31mCantidad invalida, debe ser mayor a 0\e[0m"
+        fi
+    done
+
+    # Validacion de precio
+    precio=0
+    while [[ "$precio" -le 0 ]]; do
+        echo "Ingrese el precio del producto: "
+        read -r precio
+        if [[ "$precio" -le 0 ]]; then
+        echo -e "\e[1;31mPrecio invalido, debe ser mayor a 0\e[0m"
+        fi
+    done
+    # generammos el codigo (las 3 primeras letras del tipo)
+    codigo=$(echo "${tipo:0:3}" | tr '[:lower:]' '[:upper:]' | xargs)
+
+    # Verificamos si el producto ya existe
+    existe=0
+    while IFS= read -r line; do
+        tipo2=$(echo "$line" | awk -F',' '{print $2}' | xargs)
+        modelo2=$(echo "$line" | awk -F',' '{print $3}' | xargs)
+        if [[ "$tipo2" == "$tipo" && "$modelo2" == "$modelo" ]]; then
+        echo "El producto ya existe, se actualizo la cantidad"
+        existe=1
+        break
+        fi
+    done < productos.csv
+
+    if [[ "$existe" -eq 0 ]]; then
+        echo "$codigo - $tipo - $modelo - $desc - $cant - \$${precio}"
+        funcIng "$codigo" "$tipo" "$modelo" "$desc" "$cant" "$precio"
+        echo "Producto ingresado exitosamente"
+    fi
 }
 
 vendProd(){
-    echo "########################################################################"
+    echo -e "\e[1;32m########################################################################"
     echo "#                               VENTA                                 #"
-    echo "########################################################################"
+    echo -e "########################################################################\e[0m"
     iter=1
     while IFS= read -r line; do
-        tipo=$(echo "$line" | awk -F'-' '{print $2}' | xargs) # xargs funciona como trim en java y awk extrae una columna del csv
-        modelo=$(echo "$line" | awk -F'-' '{print $3}' | xargs)
-        precio=$(echo "$line" | awk -F'-' '{print $6}' | xargs)
-        echo "$iter) $tipo - $modelo - $precio"
+        tipo=$(echo "$line" | awk -F',' '{print $2}' | xargs) # xargs funciona como trim en java y awk extrae una columna del csv
+        modelo=$(echo "$line" | awk -F',' '{print $3}' | xargs)
+        precio=$(echo "$line" | awk -F',' '{print $6}' | xargs)
+        echo "$iter) $tipo - $modelo - \$${precio}"
         ((iter++))
     done < productos.csv
+    echo -e "seleccione el numero de producto que desea comprar"
+    read -r num
+    echo -e "seleccione la cantidad a comprar"
+    read -r cant
+    linea=$(sed -n "${num}p" productos.csv)
+    IFS=',' read -r codigo tipo modelo descripcion cantidad precio <<< "$linea"
+    # TODO: cuando cant es mayor a stock y restar stock
+    total=$((cant * precio))   
+    echo -e "\e[1;32m Tipo: $tipo \e[0m"
+    echo -e "\e[1;32m Modelo: $modelo \e[0m"
+    echo -e "\e[1;32m Cantidad: $cant \e[0m"
+    echo -e "\e[1;32m Precio: $precio \e[0m"
+    echo -e "\e[1;32m Total: $total \e[0m"
+-e
+    
+
 }
 
-
-
-filterProd(){
+filterProd() {
     echo -e "\e[1;32m########################################################################"
     echo "#                          BUSCAR PRODUCTO                              #"
     echo -e "########################################################################\e[0m"
@@ -208,7 +271,7 @@ filterProd(){
                                     \n\e[1;32m 7) \e[0m Texture
                                     \n\e[1;32m 8) \e[0m Mediums"
     read -r opcion
-    
+
     filtro=''
     if [[ "$opcion" -eq 1 ]]; then
         filtro="Base"
@@ -228,29 +291,29 @@ filterProd(){
         filtro="Mediums"
     fi
 
-    if [[ "$filtro" -eq '' ]]; then
+    iter=1
+    if [[ "$filtro" == '' ]]; then
         while IFS= read -r line; do
-            tipo=$(echo "$line" | awk -F'-' '{print $2}' | xargs) # xargs funciona como trim en java y awk extrae una columna del csv
-            modelo=$(echo "$line" | awk -F'-' '{print $3}' | xargs)
-            precio=$(echo "$line" | awk -F'-' '{print $6}' | xargs)
-            echo "$iter) $tipo - $modelo - $precio"
+            tipo=$(echo "$line" | awk -F',' '{print $2}' | xargs)
+            modelo=$(echo "$line" | awk -F',' '{print $3}' | xargs)
+            precio=$(echo "$line" | awk -F',' '{print $6}' | xargs)
+            echo "$iter) $tipo - $modelo - \$${precio}"
             ((iter++))
         done < productos.csv
     else
         while IFS= read -r line; do
-            tipo=$(echo "$line" | awk -F'-' '{print $2}' | xargs) # xargs funciona como trim en java y awk extrae una columna del csv
-            if [[ "$filtro" -eq "$tipo" ]]; then
-                modelo=$(echo "$line" | awk -F'-' '{print $3}' | xargs)
-                precio=$(echo "$line" | awk -F'-' '{print $6}' | xargs)
-                echo "$iter) $tipo - $modelo - $precio"
+            tipo=$(echo "$line" | awk -F',' '{print $2}' | xargs)
+            if [[ "$filtro" == "$tipo" ]]; then
+                modelo=$(echo "$line" | awk -F',' '{print $3}' | xargs)
+                precio=$(echo "$line" | awk -F',' '{print $6}' | xargs)
+                echo "$iter) $tipo - $modelo - \$${precio}"
                 ((iter++))
             fi
         done < productos.csv
     fi
-
-
 }
 
+# TODO: Implementar la funcion crearRepo
 crearRepo(){
     echo "5"
 }
@@ -262,56 +325,63 @@ crearRepo(){
 
 
 validarLogin() {
-    if [[ $user -ne "  " ]]; then
+    if [[ -s session.tmp ]]; then
         return 0  # éxito
     else
         return 1  # error
     fi
 }
 
+menuPrincipal(){
+    
+    clear
+    while [[ "$opcion" -ne 6 ]]; do
+    echo -e "\e[1;32m########################################################################"
+    echo "#                          MENU PRINCIPAL                              #"
+    echo -e "########################################################################\e[0m"
+    echo 
+        opcion=0
+        echo -e "Seleccionar una opción: \n\n\e[1;32m 1) \e[0m Usuario 
+                                        \n\e[1;32m 2) \e[0m Ingresar producto 
+                                        \n\e[1;32m 3) \e[0m Vender producto 
+                                        \n\e[1;32m 4) \e[0m Filtro de productos 
+                                        \n\e[1;32m 5) \e[0m Crear reporte de pinturas 
+                                        \n\e[1;32m 6) \e[0m Salir"
+        read -r opcion
 
-while [[ "$opcion" -ne 6 ]]; do
-echo -e "\e[1;32m########################################################################"
-echo "#                          MENU PRINCIPAL                              #"
-echo -e "########################################################################\e[0m"
-echo 
-    opcion=0
-    echo -e "Seleccionar una opción: \n\n\e[1;32m 1) \e[0m Usuario 
-                                     \n\e[1;32m 2) \e[0m Ingresar producto 
-                                     \n\e[1;32m 3) \e[0m Vender producto 
-                                     \n\e[1;32m 4) \e[0m Filtro de productos 
-                                     \n\e[1;32m 5) \e[0m Crear reporte de pinturas 
-                                     \n\e[1;32m 6) \e[0m Salir"
-    read -r opcion
-
-    if [[ "$opcion" -eq 1 ]]; then
-        clear
-        usuario
-    elif [[ "$opcion" -eq 6 ]]; then
-        clear
-        echo "Sesión finalizada"
-    elif validarLogin ; then
-            if [[ "$opcion" -eq 2 ]]; then
-                clear
-                ingProd
-            elif [[ "$opcion" -eq 3 ]]; then
-                clear
-                vendProd
-            elif [[ "$opcion" -eq 4 ]]; then
-                clear
-                filterProd
-            elif [[ "$opcion" -eq 5 ]]; then
-                clear
-                crearRepo
-            fi
-    else
-        clear
-        if validarLogin ; then
-            echo "Opcion incorrecta, seleccione un valor válido"
-        else
+        if [[ "$opcion" -eq 1 ]]; then
+            clear
+            usuario
+        elif [[ "$opcion" -eq 6 ]]; then
+            clear
             echo -e "\e[1;31m--------------------------"
-            echo "|   usuario incorrecto   |"
-            echo -e "--------------------------\e[0m"
+                echo "|   sesion finalizada    |"
+                echo -e "--------------------------\e[0m"
+        elif validarLogin ; then
+                if [[ "$opcion" -eq 2 ]]; then
+                    clear
+                    ingProd
+                elif [[ "$opcion" -eq 3 ]]; then
+                    clear
+                    vendProd
+                elif [[ "$opcion" -eq 4 ]]; then
+                    clear
+                    filterProd
+                elif [[ "$opcion" -eq 5 ]]; then
+                    clear
+                    crearRepo
+                fi
+        else
+            clear
+            if validarLogin ; then
+                echo "Opcion incorrecta, seleccione un valor válido"
+            else
+                echo -e "\e[1;31m--------------------------"
+                echo "|   usuario incorrecto   |"
+                echo -e "--------------------------\e[0m"
+            fi
         fi
-    fi
-done
+    done
+}
+
+menuPrincipal;
