@@ -1,3 +1,25 @@
-CON,Contrast,blood angels red,Breve descripcion,50,400
-TIP,tipo2,modelo2,descric2,1,2
-OTR,otro prod mas,mode3,desc3,5,6
+Código,Tipo,Modelo,Descripción,Cantidad,Precio
+BAS,Base,modelo_base_1,Pintura gruesa y cubritiva para las capas iniciales.,37,143
+BAS,Base,modelo_base_2,Pintura gruesa y cubritiva para las capas iniciales.,89,957
+BAS,Base,modelo_base_3,Pintura gruesa y cubritiva para las capas iniciales.,79,373
+LAY,Layer,modelo_layer_1,Pintura más fina para luces y detalles.,10,562
+LAY,Layer,modelo_layer_2,Pintura más fina para luces y detalles.,32,322
+LAY,Layer,modelo_layer_3,Pintura más fina para luces y detalles.,88,533
+SHA,Shade,modelo_shade_1,Tinta líquida que fluye en los relieves para dar sombras.,76,891
+SHA,Shade,modelo_shade_2,Tinta líquida que fluye en los relieves para dar sombras.,99,550
+SHA,Shade,modelo_shade_3,Tinta líquida que fluye en los relieves para dar sombras.,21,792
+DRY,Dry,modelo_dry_1,"Muy espesa, pensada para técnicas de pincel seco.",82,892
+DRY,Dry,modelo_dry_2,"Muy espesa, pensada para técnicas de pincel seco.",91,552
+DRY,Dry,modelo_dry_3,"Muy espesa, pensada para técnicas de pincel seco.",14,640
+CON,Contrast,modelo_contrast_1,"Pintura todo-en-uno: color, sombra y algo de luz.",75,273
+CON,Contrast,modelo_contrast_2,"Pintura todo-en-uno: color, sombra y algo de luz.",19,662
+CON,Contrast,modelo_contrast_3,"Pintura todo-en-uno: color, sombra y algo de luz.",15,975
+TEC,Technical,modelo_technical_1,Pinturas especiales para efectos como sangre o óxido.,49,761
+TEC,Technical,modelo_technical_2,Pinturas especiales para efectos como sangre o óxido.,19,201
+TEC,Technical,modelo_technical_3,Pinturas especiales para efectos como sangre o óxido.,58,179
+TEX,Texture,modelo_texture_1,Pasta densa para texturizar bases de miniaturas.,81,198
+TEX,Texture,modelo_texture_2,Pasta densa para texturizar bases de miniaturas.,68,155
+TEX,Texture,modelo_texture_3,Pasta densa para texturizar bases de miniaturas.,18,934
+MED,Mediums,modelo_mediums_1,Líquidos auxiliares para diluir o modificar pinturas.,89,674
+MED,Mediums,modelo_mediums_2,Líquidos auxiliares para diluir o modificar pinturas.,68,236
+MED,Mediums,modelo_mediums_3,Líquidos auxiliares para diluir o modificar pinturas.,29,727

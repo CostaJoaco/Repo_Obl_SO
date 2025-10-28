@@ -213,6 +213,22 @@ vendProd(){
         echo "$iter) $tipo - $modelo - \$${precio}"
         ((iter++))
     done < productos.csv
+    echo -e "seleccione el numero de producto que desea comprar"
+    read -r num
+    echo -e "seleccione la cantidad a comprar"
+    read -r cant
+    linea=$(sed -n "${num}p" productos.csv)
+    IFS=',' read -r codigo tipo modelo descripcion cantidad precio <<< "$linea"
+    # TODO: cuando cant es mayor a stock y restar stock
+    total=$((cant * precio))   
+    echo -e "\e[1;32m Tipo: $tipo \e[0m"
+    echo -e "\e[1;32m Modelo: $modelo \e[0m"
+    echo -e "\e[1;32m Cantidad: $cant \e[0m"
+    echo -e "\e[1;32m Precio: $precio \e[0m"
+    echo -e "\e[1;32m Total: $total \e[0m"
+-e
+    
+
 }
 
 filterProd() {
