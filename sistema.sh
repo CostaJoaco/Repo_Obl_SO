@@ -152,61 +152,62 @@ usuario(){
 ########################################################################
 
 ingProd() {
-  echo -e "\e[1;32m###############################################"
-  echo "#                  PRODUCTO                   #"
-  echo -e "###############################################\e[0m"
+    echo -e "\e[1;32m########################################################################"
+    echo "#                              PRODUCTO                                #"
+    echo -e "########################################################################\e[0m"
 
-  echo "Ingrese el tipo de producto: "
-  read -r tipo
-  echo "Ingrese el modelo del producto: "
-  read -r modelo
-  echo "Ingrese la descripcion del producto: "
-  read -r desc
+    echo "Ingrese el tipo de producto: "
+    read -r tipo
+    echo "Ingrese el modelo del producto: "
+    read -r modelo
+    echo "Ingrese la descripcion del producto: "
+    read -r desc
 
-  # Validacion de cantidad
-  cant=0
-  while [[ "$cant" -le 0 ]]; do
-    echo "Ingrese la cantidad del producto: "
-    read -r cant
-    if [[ "$cant" -le 0 ]]; then
-      echo -e "\e[1;31mCantidad invalida, debe ser mayor a 0\e[0m"
-    fi
-  done
+    # Validacion de cantidad
+    cant=0  
+    while [[ "$cant" -le 0 ]]; do
+        echo "Ingrese la cantidad del producto: "
+        read -r cant
+        if [[ "$cant" -le 0 ]]; then
+            echo -e "\e[1;31mCantidad invalida, debe ser mayor a 0\e[0m"
+        fi
+    done
 
-  # Validacion de precio
-  precio=0
-  while [[ "$precio" -le 0 ]]; do
-    echo "Ingrese el precio del producto: "
-    read -r precio
-    if [[ "$precio" -le 0 ]]; then
-      echo -e "\e[1;31mPrecio invalido, debe ser mayor a 0\e[0m"
-    fi
-  done
-  # generammos el codigo (las 3 primeras letras del tipo)
-  codigo=$(echo "${tipo:0:3}" | tr '[:lower:]' '[:upper:]' | xargs)
+    
+    precio=0
+    while [[ "$precio" -le 0 ]]; do
+        echo "Ingrese El Precio del producto: "
+        read -r precio
+        if [[ "$precio" -le 0 ]]; then
+            echo -e "\e[1;31mPrecio invalido, debe ser mayor a 0\e[0m"
+        fi
+    done
 
-  # Verificamos si el producto ya existe
-  existe=0
-  while IFS= read -r line; do
-    tipo2=$(echo "$line" | awk -F',' '{print $2}' | xargs)
+    codigo=$(echo "${tipo:0:3}" | tr '[:lower:]' '[:upper:]' | xargs) # Extraer las 3 primeras letras de tipo y convertirlas a mayúsculas (Codigo consegudido con ayuda de IA)
+   
+    existe=0
+    while IFS= read -r line; do
+    tipo2=$(echo "$line"   | awk -F',' '{print $2}' | xargs)
     modelo2=$(echo "$line" | awk -F',' '{print $3}' | xargs)
     if [[ "$tipo2" == "$tipo" && "$modelo2" == "$modelo" ]]; then
-      echo "El producto ya existe, se actualizo la cantidad"
-      existe=1
-      break
+        echo "El producto ya existe, se actualizo la cantidad"
+        # TODO: actualizar cantidad
+        existe=1
+        break
     fi
-  done < productos.csv
+    done < productos.csv
 
-  if [[ "$existe" -eq 0 ]]; then
-    echo "$codigo - $tipo - $modelo - $desc - $cant - \$${precio}"
-    funcIng "$codigo" "$tipo" "$modelo" "$desc" "$cant" "$precio"
-    echo "Producto ingresado exitosamente"
-  fi
+    if [[ "$existe" -eq 0 ]]; then
+        echo -e "\e[1;32m------------------------------------"
+        echo "|   Producto ingresado con exito   |"
+        echo -e "------------------------------------\e[0m"
+        echo "$codigo - $tipo - $modelo - $desc - $cant - \$$precio"
+        funcIng "$codigo" "$tipo" "$modelo" "$desc" "$cant" "$precio"
+    fi
 }
-  
-funcIng() {
-  # guarda los datos en el archivo productos.csv
-  echo "$1,$2,$3,$4,$5,$6" >> productos.csv
+
+funcIng (){
+    echo "$1,$2,$3,$4,$5,$6" >> productos.csv
 }
 
 vendProd(){
@@ -227,7 +228,7 @@ vendProd(){
     read -r cant
     linea=$(sed -n "${num}p" productos.csv)
     IFS=',' read -r codigo tipo modelo descripcion cantidad precio <<< "$linea"
-    while [[ "$cant" -gt "$cantidad" || 0 -gt "$cant" ]]; do
+    while [[ "$cant" -gt "$cantidad" || "$cant" -le 0 ]]; do
         clear
         echo -e "\e[1;31m-----------------------------------------------------------"
         echo "|   Cantidad invalida, La cantidad debe ser menor a $cantidad    |"
