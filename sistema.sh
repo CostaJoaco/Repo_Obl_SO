@@ -17,6 +17,9 @@ passCorrecta(){
 
 crearUser(){
     opcion=0
+    echo -e "\e[1;32m---------------------"
+    echo "|   Crear Usuario   |"
+    echo -e "---------------------\e[0m"
     echo -e "Ingresar un nombre de usuario: "
     read -r usuario
     existeUsuario "$usuario"
@@ -64,6 +67,9 @@ cambiarPass(){
 }
 
 login(){
+    echo -e "\e[1;32m----------------------"
+               echo "|   Iniciar sesion   |"
+            echo -e "----------------------\e[0m"
     echo -e "Ingrese nombre de usuario: "
     read -r usuario
 
@@ -93,10 +99,10 @@ login(){
     fi
 }
 
-logout(){
+logout(){    
     clear
-    if [[ "$user" -ne "  " ]]; then
-        rm -f session.tmp
+    if [[ -s session.tmp ]]; then   # hay sesión activa
+        rm -f session.tmp .session.tmp
         echo "Sesión cerrada exitosamente"
     else
         echo "Debe ingresar sesión previamente"
@@ -105,12 +111,13 @@ logout(){
 
 usuario(){
     opcion=0
-    echo -e "\e[1;32m########################################################################"
-    echo "#                            MENU USUARIO                              #"
-    echo -e "########################################################################\e[0m"
-    echo 
     
     while [[ "$opcion" -ne 5 ]]; do
+        clear
+        echo -e "\e[1;32m########################################################################"
+        echo "#                            MENU USUARIO                              #"
+        echo -e "########################################################################\e[0m"
+        echo 
         echo -e "Seleccionar una opción: \n\n\e[1;32m 1) \e[0m Crear usuario 
                                          \n\e[1;32m 2) \e[0m Cambiar contraseña 
                                          \n\e[1;32m 3) \e[0m Login 
@@ -130,6 +137,7 @@ usuario(){
         elif [[ "$opcion" -eq 4 ]]; then
             clear
             logout
+            sleep 2
         elif [[ "$opcion" -eq 5 ]]; then
             echo "Voler al menú"
         else
@@ -145,7 +153,7 @@ usuario(){
 
 ingProd() {
   echo -e "\e[1;32m###############################################"
-  echo "# PRODUCTO #"
+  echo "#                  PRODUCTO                   #"
   echo -e "###############################################\e[0m"
 
   echo "Ingrese el tipo de producto: "
@@ -203,7 +211,7 @@ funcIng() {
 
 vendProd(){
     echo -e "\e[1;32m########################################################################"
-    echo "#                               VENTA                                 #"
+    echo "#                                VENTA                                 #"
     echo -e "########################################################################\e[0m"
     iter=1
     while IFS= read -r line; do
@@ -219,14 +227,34 @@ vendProd(){
     read -r cant
     linea=$(sed -n "${num}p" productos.csv)
     IFS=',' read -r codigo tipo modelo descripcion cantidad precio <<< "$linea"
+    while [[ "$cant" -gt "$cantidad" || 0 -gt "$cant" ]]; do
+        clear
+        echo -e "\e[1;31m-----------------------------------------------------------"
+        echo "|   Cantidad invalida, La cantidad debe ser menor a $cantidad    |"
+        echo -e "-----------------------------------------------------------\e[0m"
+        echo
+        echo "Inserte nuevamente:"
+        read -r cant
+    done
+    
+    col=5 
+    valor=$((cantidad - cant)) 
+    # linea hecha con IA
+    awk -v r="$num" -v c="$col" -v v="$valor" 'BEGIN{FS=OFS=","} NR==r{$c=v}1' \
+    productos.csv > productos.csv.tmp && mv productos.csv.tmp productos.csv
+
     # TODO: cuando cant es mayor a stock y restar stock
+    clear
+    echo -e "\e[1;32m----------------------------------"
+    echo "|   Compra Realizada con exito   |"
+    echo -e "----------------------------------\e[0m"
     total=$((cant * precio))   
     echo -e "\e[1;32m Tipo: $tipo \e[0m"
     echo -e "\e[1;32m Modelo: $modelo \e[0m"
     echo -e "\e[1;32m Cantidad: $cant \e[0m"
     echo -e "\e[1;32m Precio: $precio \e[0m"
     echo -e "\e[1;32m Total: $total \e[0m"
--e
+    sleep 1
     
 
 }
