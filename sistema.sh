@@ -320,7 +320,20 @@ filterProd() {
 
 # TODO: Implementar la funcion crearRepo
 crearRepo(){
-    echo "5"
+    echo -e "\e[1;32m------------------------------------"
+           echo "|           Exportar csv           |"
+        echo -e "------------------------------------\e[0m"
+    echo 
+    echo "Inserte la ruta en donde desea exportar:";
+    read -r ruta        
+    DIR="$(cd "$(dirname "$0")" && pwd)"
+    if [ -d "$ruta" ]; then
+        echo "Ruta válida: $ruta"
+        cp "$DIR/productos.csv" "$ruta/"
+        echo -e "\e[1;32mArchivo exportado correctamente.\e[0m"
+    else
+        echo -e "\e[1;31mError: La ruta '$ruta' no existe o no es un directorio válido.\e[0m"
+    fi
 }
 
 
