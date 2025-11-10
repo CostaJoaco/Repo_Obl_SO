@@ -10,7 +10,7 @@
 #define CANT_ESCRITORES 5
 #define SIZE_CARTEL 20
 
-// Estructura vuelo
+// struct vuelo, ref de IA prompt:"para crear un struct en c es similar a c++? como lo creo?"
 typedef struct {
     int hora;
     char destination[20];
@@ -23,12 +23,12 @@ typedef struct {
 vuelo* cartel[SIZE_CARTEL];
 char* tipos[] = {"On Time", "Delayed", "Cancelled"};
 
-// Sincronización
+// Sincronizacion
 sem_t sem_escritor;
 pthread_mutex_t mutex_lectores;
 int lectores_activos = 0;
 
-// Función para agregar vuelos
+// Funcion para agregar vuelos
 void* agregarVuelo(vuelo** cartel, int cant) {
     for (int i = 0; i < cant; i++) {
         vuelo* v = (vuelo*)malloc(sizeof(vuelo));
@@ -42,7 +42,7 @@ void* agregarVuelo(vuelo** cartel, int cant) {
     return NULL;
 }
 
-// Función para modificar vuelos
+// Funcion para modificar vuelos
 void* modificarVuelo(vuelo** cartel, int cant) {
     for (int i = 0; i < cant; i++) {
         int index = rand() % SIZE_CARTEL;
@@ -53,7 +53,7 @@ void* modificarVuelo(vuelo** cartel, int cant) {
     return NULL;
 }
 
-// Función lector
+// Funcion lector
 void* lector(void* x) {
     int id = *(int*)x;
 
@@ -64,7 +64,7 @@ void* lector(void* x) {
     }
     pthread_mutex_unlock(&mutex_lectores);
 
-    printf("Pasajero %d está mirando el cartel\n", id);
+    printf("Pasajero %d esta mirando el cartel\n", id);
     sleep(1); // Simula lectura
 
     pthread_mutex_lock(&mutex_lectores);
@@ -77,12 +77,12 @@ void* lector(void* x) {
     return NULL;
 }
 
-// Función escritor
+// Funcion escritor
 void* escritor(void* x) {
     int id = *(int*)x;
 
     sem_wait(&sem_escritor);
-    printf("Oficinista %d está modificando el cartel\n", id);
+    printf("Oficinista %d esta modificando el cartel\n", id);
     modificarVuelo(cartel, rand() % 5 + 1);
     sleep(1); // Simula escritura
     sem_post(&sem_escritor);
