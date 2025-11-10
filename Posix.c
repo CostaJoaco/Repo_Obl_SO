@@ -1,74 +1,126 @@
-#include <pthread.h> 
-#include <stdio.h> 
-#include <stdlib.h> 
-#include <time.h> 
+#include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <string.h>
 #include <semaphore.h>
+#include <unistd.h>
 
-//Creo una variable compartida para leer y modificar del tipo "vuelo"
-struct vuelo {
-    time_t hora
-    char destination[20]
-    char flight[6]
-    int gate
-    char remarks[10]
-};
+#define CANT_LECTORES 100
+#define CANT_ESCRITORES 5
+#define SIZE_CARTEL 20
 
-void* agregarVuelo(vuelo** cartel, int cant , int size, char* tipos[]){
-    // ejemplo de vuelo(hora=09:45, destination="New York", flight="AA101", gate=5, remarks="On Time")
-    for (int i = 0; i < cant ; i++) {
+// Estructura vuelo
+typedef struct {
+    int hora;
+    char destination[20];
+    char flight[6];
+    int gate;
+    char remarks[10];
+} vuelo;
+
+// Variables compartidas
+vuelo* cartel[SIZE_CARTEL];
+char* tipos[] = {"On Time", "Delayed", "Cancelled"};
+
+// Sincronización
+sem_t sem_escritor;
+pthread_mutex_t mutex_lectores;
+int lectores_activos = 0;
+
+// Función para agregar vuelos
+void* agregarVuelo(vuelo** cartel, int cant) {
+    for (int i = 0; i < cant; i++) {
         vuelo* v = (vuelo*)malloc(sizeof(vuelo));
-        v->hora = rand() % 24 * 100 + rand() % 60; // hora random entre 00:00 y 23:59
-        sprintf(v->destination, "City%d", rand() % 100); // destino random
-        sprintf(v->flight, "FL%03d", rand() % 1000); // vuelo random
-        v->gate = rand() % 20 + 1; // gate random entre 1 y 20
-        sprintf(v->remarks, tipos[i % 3] ); // comentarios fijos por simplicidad
+        v->hora = (rand() % 24) * 100 + (rand() % 60);
+        sprintf(v->destination, "City%d", rand() % 100);
+        sprintf(v->flight, "FL%03d", rand() % 1000);
+        v->gate = rand() % 20 + 1;
+        strcpy(v->remarks, tipos[i % 3]);
         cartel[i] = v;
     }
+    return NULL;
 }
-void* modificarVuelo(vuelo** cartel, int cant, int size, char* tipos[]){
-    // modifico un vuelo random del cartel
-   for(int i =0; i < cant ; i++){
-        int index = rand() % size;
-        cartel[index]->hora = rand() % 24 * 100 + rand() % 60; // nueva hora random
+
+// Función para modificar vuelos
+void* modificarVuelo(vuelo** cartel, int cant) {
+    for (int i = 0; i < cant; i++) {
+        int index = rand() % SIZE_CARTEL;
+        cartel[index]->hora = (rand() % 24) * 100 + (rand() % 60);
         cartel[index]->gate = rand() % 20 + 1;
-        int atraso = rand() % 3;
-        cartel[index]->remarks = tipos[atraso];
-   }
-}
-
-void* lector (void * x){
-    int id = (int)x;
-    printf("pasajero %id esta mirando el cartel");
-}
-
-void* escritor (void * x){ 
-    int id = (int)x;
-    printf(" oficinista %id esta modificando el cartel");
-    modificarVuelo(cartel, cant);
-}
-
-int main(){
-    pthread_t escritores[5];
-    pthread_t lectores[100];
-    pthread_attr_t attr;
-    pthread_attr_init(&attr);
-    
-    for (int i = 0; i < 100; i++) {
-        lectores[i] = i;
-
+        strcpy(cartel[index]->remarks, tipos[rand() % 3]);
     }
-    for (int i = 0; i < 5; i++) {
-        escritores[i] = i;
+    return NULL;
+}
+
+// Función lector
+void* lector(void* x) {
+    int id = *(int*)x;
+
+    pthread_mutex_lock(&mutex_lectores);
+    lectores_activos++;
+    if (lectores_activos == 1) {
+        sem_wait(&sem_escritor);
     }
-    char* tipos = {"On Time", "Delayed", "Cancelled"};
-    vuelo** cartel = new vuelo*[20];
-    agregarVuelo(cartel, 20, 20, tipos);
-    for (int i = 0; i < 100; i++) {
-        pthread_create(&lectores[i], &attr, lector, NULL);
+    pthread_mutex_unlock(&mutex_lectores);
+
+    printf("Pasajero %d está mirando el cartel\n", id);
+    sleep(1); // Simula lectura
+
+    pthread_mutex_lock(&mutex_lectores);
+    lectores_activos--;
+    if (lectores_activos == 0) {
+        sem_post(&sem_escritor);
+    }
+    pthread_mutex_unlock(&mutex_lectores);
+
+    return NULL;
+}
+
+// Función escritor
+void* escritor(void* x) {
+    int id = *(int*)x;
+
+    sem_wait(&sem_escritor);
+    printf("Oficinista %d está modificando el cartel\n", id);
+    modificarVuelo(cartel, rand() % 5 + 1);
+    sleep(1); // Simula escritura
+    sem_post(&sem_escritor);
+
+    return NULL;
+}
+
+int main() {
+    srand(time(NULL));
+    agregarVuelo(cartel, SIZE_CARTEL);
+
+    pthread_t lectores[CANT_LECTORES], escritores[CANT_ESCRITORES];
+    int id_lectores[CANT_LECTORES], id_escritores[CANT_ESCRITORES];
+
+    pthread_mutex_init(&mutex_lectores, NULL);
+    sem_init(&sem_escritor, 0, 1);
+
+    for (int i = 0; i < CANT_LECTORES; i++) {
+        id_lectores[i] = i;
+        pthread_create(&lectores[i], NULL, lector, &id_lectores[i]);
+    }
+
+    for (int i = 0; i < CANT_ESCRITORES; i++) {
+        id_escritores[i] = i;
+        pthread_create(&escritores[i], NULL, escritor, &id_escritores[i]);
+    }
+
+    for (int i = 0; i < CANT_LECTORES; i++) {
         pthread_join(lectores[i], NULL);
     }
-    for (int i = 0; i < 5; i++) {
-        pthread_create(&escritores[i], &attr, escritor, NULL);
+
+    for (int i = 0; i < CANT_ESCRITORES; i++) {
         pthread_join(escritores[i], NULL);
     }
+
+    return 0;
 }
+
+//! En la Bibliografia agregar:
+//! Link de consulta por escritores[i] para darles nombre id
+//! NOTA: se uso #define, en vez de una variable para no generar errores con numeros fijos
