@@ -14,7 +14,7 @@
 typedef struct {
     int hora;
     char destination[20];
-    char flight[6];
+    char flight[8];
     int gate;
     char remarks[10];
 } vuelo;
@@ -100,21 +100,21 @@ int main() {
     pthread_mutex_init(&mutex_lectores, NULL);
     sem_init(&sem_escritor, 0, 1);
 
-    for (int i = 0; i < CANT_LECTORES; i++) {
+    for (int i = 1; i <= CANT_LECTORES; i++) {
         id_lectores[i] = i;
         pthread_create(&lectores[i], NULL, lector, &id_lectores[i]);
     }
 
-    for (int i = 0; i < CANT_ESCRITORES; i++) {
+    for (int i = 1; i <= CANT_ESCRITORES; i++) {
         id_escritores[i] = i;
         pthread_create(&escritores[i], NULL, escritor, &id_escritores[i]);
     }
 
-    for (int i = 0; i < CANT_LECTORES; i++) {
+    for (int i = 1; i <= CANT_LECTORES; i++) {
         pthread_join(lectores[i], NULL);
     }
 
-    for (int i = 0; i < CANT_ESCRITORES; i++) {
+    for (int i = 1; i <= CANT_ESCRITORES; i++) {
         pthread_join(escritores[i], NULL);
     }
 
