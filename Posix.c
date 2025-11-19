@@ -55,7 +55,6 @@ void* escritor(void* arg) {
 }
 
 int main() {
-    srand(time(NULL));
 
     pthread_t hilos[TOTAL_HILOS];
     int ids[TOTAL_HILOS];
