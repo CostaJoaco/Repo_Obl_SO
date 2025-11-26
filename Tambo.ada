@@ -1,3 +1,4 @@
+
 with Ada.Text_IO;
 with Ada.Integer_Text_IO;
 with Ada.Numerics.Discrete_Random;
@@ -19,92 +20,100 @@ procedure Main is
    Gen_Vacuna  : Rand_Vacuna.Generator;
    Gen_Accion  : Rand_Accion.Generator;
 
-
-   protected Sala is
-      entry Entrar(ID : Integer);
-      procedure Salir(ID : Integer);
-   private
-      Cant : Integer := 0;
+   task Sala is
+      entry Operar(ID : Integer; Accion : String; Exito : out Boolean);
    end Sala;
 
-   protected body Sala is
-      entry Entrar(ID : Integer) when Cant < 15 is
-      begin
-         Cant := Cant + 1;
-         Put_Line("Vaca" & Integer'Image(ID) & " entra a la sala");
-      end Entrar;
-
-      procedure Salir(ID : Integer) is
-      begin
-         Cant := Cant - 1;
-         Put_Line("Vaca" & Integer'Image(ID) & " sale de la sala");
-      end Salir;
+   task body Sala is
+      Cant : Integer := 0;
+   begin
+      loop
+         accept Operar(ID : Integer; Accion : String; Exito : out Boolean) do
+            if Accion = "Entrar" then
+               if Cant < 15 then
+                  Cant := Cant + 1;
+                  Exito := True;
+                  Put("Vaca "); Put(ID); Put_Line(" entra a la sala");
+               else
+                  Exito := False;
+               end if;
+            else
+               Cant := Cant - 1;
+               Exito := True;
+               Put("Vaca "); Put(ID); Put_Line(" sale de la sala");
+            end if;
+         end Operar;
+      end loop;
    end Sala;
 
+   task Mangas is
+      entry Operar(ID : Integer; Accion : String; Exito : out Boolean);
+   end Mangas;
 
-   protected Mangas is
-      entry Entrar(ID : Integer);
-      procedure Salir(ID : Integer);
-   private
+   task body Mangas is
       Cant : Integer := 0;
+   begin
+      loop
+         accept Operar(ID : Integer; Accion : String; Exito : out Boolean) do
+            if Accion = "Entrar" then
+               if Cant < 5 then
+                  Cant := Cant + 1;
+                  Exito := True;
+                  Put("Vaca "); Put(ID); Put_Line(" entra a vacunación");
+               else
+                  Exito := False;
+               end if;
+            else
+               Cant := Cant - 1;
+               Exito := True;
+               Put("Vaca "); Put(ID); Put_Line(" sale de vacunación");
+            end if;
+         end Operar;
+      end loop;
    end Mangas;
 
-   protected body Mangas is
-      entry Entrar(ID : Integer) when Cant < 5 is
-      begin
-         Cant := Cant + 1;
-         Put_Line("Vaca" & Integer'Image(ID) & " entra a vacunación");
-      end Entrar;
-
-      procedure Salir(ID : Integer) is
-      begin
-         Cant := Cant - 1;
-         Put_Line("Vaca" & Integer'Image(ID) & " sale de vacunación");
-      end Salir;
-   end Mangas;
-
-   
-   protected Pasillo is
+   task Pasillo is
       entry Usar(ID : Integer);
-   private
-      Ocupado : Boolean := False;
    end Pasillo;
 
-   protected body Pasillo is
-      entry Usar(ID : Integer) when not Ocupado is
-      begin
-         Ocupado := True;
-         Put_Line("Vaca" & Integer'Image(ID) & " usa el pasillo");
-         Ocupado := False;
-      end Usar;
+   task body Pasillo is
+   begin
+      loop
+         accept Usar(ID : Integer) do
+            Put("Vaca "); Put(ID); Put_Line(" usa el pasillo");
+         end Usar;
+      end loop;
    end Pasillo;
 
- 
-   protected Camiones is
-      entry Subir(ID : Integer);
-      function Lleno return Boolean;
-   private
+   task Camiones is
+      entry Operar(ID : Integer; Accion : String; Exito : out Boolean);
+   end Camiones;
+
+   task body Camiones is
       C1 : Integer := 0;
       C2 : Integer := 0;
+   begin
+      loop
+         accept Operar(ID : Integer; Accion : String; Exito : out Boolean) do
+            if Accion = "Subir" then
+               if C1 < 50 then
+                  C1 := C1 + 1;
+                  Exito := True;
+                  Put("Vaca "); Put(ID); Put_Line(" sube al camión 1");
+               elsif C2 < 50 then
+                  C2 := C2 + 1;
+                  Exito := True;
+                  Put("Vaca "); Put(ID); Put_Line(" sube al camión 2");
+               else
+                  Exito := False;
+               end if;
+            else
+               Exito := (C1 = 50 and C2 = 50);
+            end if;
+         end Operar;
+      end loop;
    end Camiones;
 
-   protected body Camiones is
-      entry Subir(ID : Integer) when C1 < 50 or C2 < 50 is
-      begin
-         if C1 < 50 then
-            C1 := C1 + 1;
-            Put_Line("Vaca" & Integer'Image(ID) & " sube al camión 1");
-         else
-            C2 := C2 + 1;
-            Put_Line("Vaca" & Integer'Image(ID) & " sube al camión 2");
-         end if;
-      end Subir;
-
-      function Lleno return Boolean is
-      begin
-         return C1 = 50 and C2 = 50;
-      end Lleno;
-   end Camiones;
 
    task type Vaca(ID : Integer);
 
@@ -116,46 +125,88 @@ procedure Main is
          exit when Ordenada and Vacunada;
 
          declare
-            A : Integer := Rand_Accion.Random(Gen_Accion);
+            Acc : Integer := Rand_Accion.Random(Gen_Accion);
          begin
-            if A = 1 and not Ordenada then
-               Sala.Entrar(ID);
+            if Acc = 1 and not Ordenada then
+               
+               loop
+                  declare
+                     Exito : Boolean;
+                  begin
+                     Sala.Operar(ID, "Entrar", Exito);
+                     exit when Exito = True;
+                  end;
+                  delay 0.02;
+               end loop;
+
                delay Duration(Rand_Ordenar.Random(Gen_Ordenar));
-               Sala.Salir(ID);
+
+               declare
+                  Exito : Boolean;
+               begin
+                  Sala.Operar(ID, "Salir", Exito);
+               end;
                Ordenada := True;
 
-            elsif A = 2 and not Vacunada then
+            elsif Acc = 2 and not Vacunada then
                Pasillo.Usar(ID);
-               Mangas.Entrar(ID);
+
+               loop
+                  declare
+                     Exito : Boolean;
+                  begin
+                     Mangas.Operar(ID, "Entrar", Exito);
+                     exit when Exito = True;
+                  end;
+                  delay 0.02;
+               end loop;
+
                delay Duration(Rand_Vacuna.Random(Gen_Vacuna));
-               Mangas.Salir(ID);
+
+               declare
+                  Exito : Boolean;
+               begin
+                  Mangas.Operar(ID, "Salir", Exito);
+               end;
                Pasillo.Usar(ID);
+
                Vacunada := True;
             end if;
          end;
       end loop;
 
-      Camiones.Subir(ID);
+   
+      loop
+         declare
+            Exito : Boolean;
+         begin
+            Camiones.Operar(ID, "Subir", Exito);
+            exit when Exito = True;
+         end;
+         delay 0.02;
+      end loop;
    end Vaca;
+
 
    type VacaRef is access Vaca;
    Vacas : array (1 .. 100) of VacaRef;
+
+   Lleno : Boolean;
 
 begin
    Rand_Ordenar.Reset(Gen_Ordenar);
    Rand_Vacuna.Reset(Gen_Vacuna);
    Rand_Accion.Reset(Gen_Accion);
 
-   
    for I in 1 .. 100 loop
       Vacas(I) := new Vaca(I);
    end loop;
 
-   
-   while not Camiones.Lleno loop
+   loop
+      Camiones.Operar(0, "Lleno", Lleno);
+      exit when Lleno = True;
       delay 0.5;
    end loop;
 
    Put_Line("Los dos camiones están llenos. Fin del programa.");
-
 end Main;
