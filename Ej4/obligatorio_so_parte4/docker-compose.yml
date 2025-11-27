@@ -1,0 +1,41 @@
+services:
+  app:
+    build: ./web            
+    hostname: node-app
+    restart: always
+    environment:
+      - REDIS_HOST=redis     # Nombre del servicio de abajo
+      - REDIS_PORT=6379
+      - PORT=5000
+    networks:
+      - front-tier
+      - back-tier
+
+  redis:
+    image: redis:alpine     
+    hostname: redis-db
+    restart: always
+    volumes:
+      - redis_data:/data    
+    networks:
+      - back-tier
+
+  nginx:
+    build: ./nginx           # Apunta a la carpeta "nginx"
+    hostname: nginx-balancer
+    restart: always
+    ports:
+      - "8080:80"           
+    depends_on:
+      - app
+    networks:
+      - front-tier
+
+# Volúmenes para que Redis no pierda datos si se reinicia
+volumes:
+  redis_data:
+
+# Definición de la red para que se vean entre ellos
+networks:
+  front-tier:
+  back-tier:
