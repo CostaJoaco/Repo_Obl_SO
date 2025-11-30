@@ -101,7 +101,7 @@ login(){
 
 logout(){    
     clear
-    if [[ -s session.tmp ]]; then   # hay sesión activa
+    if [[ -s session.tmp ]]; then   
         rm -f session.tmp .session.tmp
         echo "Sesión cerrada exitosamente"
     else
@@ -163,7 +163,7 @@ ingProd() {
     echo "Ingrese la descripcion del producto: "
     read -r desc
 
-    # Validacion de cantidad
+    
     cant=0  
     while [[ "$cant" -le 0 ]]; do
         echo "Ingrese la cantidad del producto: "
@@ -216,7 +216,7 @@ vendProd(){
     echo -e "########################################################################\e[0m"
     iter=1
     while IFS= read -r line; do
-        tipo=$(echo "$line" | awk -F',' '{print $2}' | xargs) # xargs funciona como trim en java y awk extrae una columna del csv
+        tipo=$(echo "$line" | awk -F',' '{print $2}' | xargs) 
         modelo=$(echo "$line" | awk -F',' '{print $3}' | xargs)
         precio=$(echo "$line" | awk -F',' '{print $6}' | xargs)
         echo "$iter) $tipo - $modelo - \$${precio}"
@@ -318,7 +318,7 @@ filterProd() {
     fi
 }
 
-# TODO: Implementar la funcion crearRepo
+
 crearRepo(){
     echo -e "\e[1;32m------------------------------------"
            echo "|           Exportar csv           |"
