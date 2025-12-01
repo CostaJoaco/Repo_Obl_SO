@@ -2,66 +2,71 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <semaphore.h>
 #include <time.h>
 
 #define CANT_LECTORES 100
 #define CANT_ESCRITORES 5
-#define TOTAL_HILOS 105
+#define MODS_POR_ESCRITOR 3
+#define TOTAL_ESCRITURAS (CANT_ESCRITORES * MODS_POR_ESCRITOR)
+#define TOTAL_HILOS (CANT_LECTORES + TOTAL_ESCRITURAS)
 
-sem_t turno;
-sem_t rw_mutex;
-pthread_mutex_t mutex;
-int lectores_activos = 0;
+// ------------------ 
+
+int next_ticket = 0;
+int turno_actual = 0;
+pthread_mutex_t ticket_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+void esperar_turno(int* mi_turno) {
+    pthread_mutex_lock(&ticket_mutex);
+    *mi_turno = next_ticket++;
+    pthread_mutex_unlock(&ticket_mutex);
+
+    while (turno_actual != *mi_turno) {
+        sched_yield();
+    }
+}
+
+void liberar_turno() {
+    __sync_fetch_and_add(&turno_actual, 1);
+}
+
+// ------------------
 
 void* lector(void* arg) {
     int id = *(int*)arg;
+    int ticket;
 
-    sem_wait(&turno);
-    pthread_mutex_lock(&mutex);
-    lectores_activos++;
-    if (lectores_activos == 1) {
-        sem_wait(&rw_mutex);
-    }
-    pthread_mutex_unlock(&mutex);
-    sem_post(&turno);
+    esperar_turno(&ticket);
 
-    printf("Pasajero %d esta leyendo el cartel\n", id);
+    printf("Pasajero %d esta mirando el cartel\n", id);
     sleep(rand() % 3 + 1);
 
-    pthread_mutex_lock(&mutex);
-    lectores_activos--;
-    if (lectores_activos == 0) {
-        sem_post(&rw_mutex);
-    }
-    pthread_mutex_unlock(&mutex);
-
+    liberar_turno();
     return NULL;
 }
+
 
 void* escritor(void* arg) {
     int id = *(int*)arg;
+    int ticket;
 
-    sem_wait(&turno);
-    sem_wait(&rw_mutex);
-    sem_post(&turno);
+    esperar_turno(&ticket);
 
     printf("Oficinista %d esta modificando el cartel\n", id);
-    sleep(rand() % 4 + 1);
-
-    sem_post(&rw_mutex);
-
+    sleep(rand() % 5 + 1);
+    
+    liberar_turno();
     return NULL;
 }
 
+// ------------------
+
 int main() {
+    srand(time(NULL));
 
     pthread_t hilos[TOTAL_HILOS];
-    int ids[TOTAL_HILOS];
-
-    pthread_mutex_init(&mutex, NULL);
-    sem_init(&turno, 0, 1);
-    sem_init(&rw_mutex, 0, 1);
+    int lector_ids[CANT_LECTORES];
+    int escritores_ids[TOTAL_ESCRITURAS];
 
     char roles[TOTAL_HILOS];
     for (int i = 0; i < CANT_LECTORES; i++) roles[i] = 'L';
@@ -69,21 +74,23 @@ int main() {
 
     for (int i = TOTAL_HILOS - 1; i > 0; i--) {
         int j = rand() % (i + 1);
-        char temp = roles[i];
+        char t = roles[i];
         roles[i] = roles[j];
-        roles[j] = temp;
+        roles[j] = t;
     }
 
-    int lector_id = 1, escritor_id = 1;
+    int lector_idx = 0, escritor_idx = 0;
+
     for (int i = 0; i < TOTAL_HILOS; i++) {
         if (roles[i] == 'L') {
-            ids[i] = lector_id++;
-            pthread_create(&hilos[i], NULL, lector, &ids[i]);
+            lector_ids[lector_idx] = lector_idx + 1;
+            pthread_create(&hilos[i], NULL, lector, &lector_ids[lector_idx]);
+            lector_idx++;
         } else {
-            ids[i] = escritor_id++;
-            pthread_create(&hilos[i], NULL, escritor, &ids[i]);
+            escritores_ids[escritor_idx] = (escritor_idx / MODS_POR_ESCRITOR) + 1;
+            pthread_create(&hilos[i], NULL, escritor, &escritores_ids[escritor_idx]);
+            escritor_idx++;
         }
-        usleep(50000); // ! Agregue este sleep para que no se mezclen los hilos incorrectamente y respetar un orden
     }
 
     for (int i = 0; i < TOTAL_HILOS; i++) {
