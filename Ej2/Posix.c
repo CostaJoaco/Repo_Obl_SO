@@ -45,7 +45,6 @@ void* Escritor(void* arg) {
     }
 
     return NULL;
-
 }
 
 
@@ -55,7 +54,7 @@ void* Escritor(void* arg) {
 int main(void) {
 
     sem_init(&wrt, 0, 1);
-    sem_init(&mutex, 0, 1);1
+    sem_init(&mutex, 0, 1);
 
     pthread_t hLectores[CANT_PASAJEROS];
     pthread_t hEscritores[CANT_OFICINISTAS];
