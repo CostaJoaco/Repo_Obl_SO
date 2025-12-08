@@ -1,101 +1,104 @@
+
+// Lectores-Escritores: Pasajeros (lectores) y Oficinistas (escritores)
+// Versión mínima: sólo imprime mensajes para validar concurrencia.
+// Compilar: gcc -pthread -o aeropuerto Posix.c
+
 #include <pthread.h>
+#include <semaphore.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <time.h>
 
-#define CANT_LECTORES 100
-#define CANT_ESCRITORES 5
-#define MODS_POR_ESCRITOR 3
-#define TOTAL_ESCRITURAS (CANT_ESCRITORES * MODS_POR_ESCRITOR)
-#define TOTAL_HILOS (CANT_LECTORES + TOTAL_ESCRITURAS)
+#define CANT_PASAJEROS        100
+#define CANT_OFICINISTAS      5
+#define MODS_POR_OFICINISTA   3  // cada oficinista "escribe" 3 veces
 
-// ------------------ 
+// Semáforos y estado compartido
+sem_t wrt;        // controla acceso exclusivo de escritores
+sem_t mutex;      // protege la variable contadora de lectores
+int lectores = 0; // cantidad de lectores activos
 
-int next_ticket = 0;
-int turno_actual = 0;
-pthread_mutex_t ticket_mutex = PTHREAD_MUTEX_INITIALIZER;
+// --- Hilos ---
 
-void esperar_turno(int* mi_turno) {
-    pthread_mutex_lock(&ticket_mutex);
-    *mi_turno = next_ticket++;
-    pthread_mutex_unlock(&ticket_mutex);
-
-    while (turno_actual != *mi_turno) {
-        sched_yield();
-    }
-}
-
-void liberar_turno() {
-    __sync_fetch_and_add(&turno_actual, 1);
-}
-
-// ------------------
-
-void* lector(void* arg) {
+// Pasajero = Lector
+void* pasajero(void* arg) {
     int id = *(int*)arg;
-    int ticket;
 
-    esperar_turno(&ticket);
+    // Entrada de lector
+    sem_wait(&mutex);
+    lectores++;
+    if (lectores == 1) {
+        // primer lector bloquea a los escritores
+        sem_wait(&wrt);
+    }
+    sem_post(&mutex);
 
-    printf("Pasajero %d esta mirando el cartel\n", id);
-    sleep(rand() % 3 + 1);
+    // Lectura concurrente (solo mensaje)
+    printf("Pasajero %d está viendo el cartel\n", id);
 
-    liberar_turno();
+    // Salida de lector
+    sem_wait(&mutex);
+    lectores--;
+    if (lectores == 0) {
+        // último lector libera a los escritores
+        sem_post(&wrt);
+    }
+    sem_post(&mutex);
+
     return NULL;
 }
 
-
-void* escritor(void* arg) {
+// Oficinista = Escritor
+void* oficinista(void* arg) {
     int id = *(int*)arg;
-    int ticket;
 
-    esperar_turno(&ticket);
-
-    printf("Oficinista %d esta modificando el cartel\n", id);
-    sleep(rand() % 5 + 1);
-    
-    liberar_turno();
+    // Cada oficinista realiza varias "escrituras" (solo mensaje)
+    for (int m = 1; m <= MODS_POR_OFICINISTA; m++) {
+        sem_wait(&wrt);  // sección crítica exclusiva
+        printf("Oficinista %d está escribiendo (mod %d)\n", id, m);
+        sem_post(&wrt);
+        // Breve pausa para dar variabilidad al scheduler (opcional)
+        // usleep((rand() % 5 + 1) * 1000); // descomentar si querés más desorden
+    }
     return NULL;
 }
 
-// ------------------
+int main(void) {
+    srand((unsigned)time(NULL));
 
-int main() {
-    srand(time(NULL));
+    // Inicialización de semáforos
+    sem_init(&wrt,   0, 1);
+    sem_init(&mutex, 0, 1);
 
-    pthread_t hilos[TOTAL_HILOS];
-    int lector_ids[CANT_LECTORES];
-    int escritores_ids[TOTAL_ESCRITURAS];
+    pthread_t h_pasajeros[CANT_PASAJEROS];
+    pthread_t h_oficinistas[CANT_OFICINISTAS];
+    int id_pasajeros[CANT_PASAJEROS];
+    int id_oficinistas[CANT_OFICINISTAS];
 
-    char roles[TOTAL_HILOS];
-    for (int i = 0; i < CANT_LECTORES; i++) roles[i] = 'L';
-    for (int i = CANT_LECTORES; i < TOTAL_HILOS; i++) roles[i] = 'E';
-
-    for (int i = TOTAL_HILOS - 1; i > 0; i--) {
-        int j = rand() % (i + 1);
-        char t = roles[i];
-        roles[i] = roles[j];
-        roles[j] = t;
+    // Creación de hilos (sin aleatorizar): 100 pasajeros + 5 oficinistas
+    for (int i = 0; i < CANT_PASAJEROS; i++) {
+        id_pasajeros[i] = i + 1;
+        pthread_create(&h_pasajeros[i], NULL, pasajero, &id_pasajeros[i]);
+    }
+    for (int j = 0; j < CANT_OFICINISTAS; j++) {
+        id_oficinistas[j] = j + 1;
+        pthread_create(&h_oficinistas[j], NULL, oficinista, &id_oficinistas[j]);
     }
 
-    int lector_idx = 0, escritor_idx = 0;
-
-    for (int i = 0; i < TOTAL_HILOS; i++) {
-        if (roles[i] == 'L') {
-            lector_ids[lector_idx] = lector_idx + 1;
-            pthread_create(&hilos[i], NULL, lector, &lector_ids[lector_idx]);
-            lector_idx++;
-        } else {
-            escritores_ids[escritor_idx] = (escritor_idx / MODS_POR_ESCRITOR) + 1;
-            pthread_create(&hilos[i], NULL, escritor, &escritores_ids[escritor_idx]);
-            escritor_idx++;
-        }
+    // Espera a que terminen todos
+    for (int i = 0; i < CANT_PASAJEROS; i++) {
+        pthread_join(h_pasajeros[i], NULL);
+    }
+    for (int j = 0; j < CANT_OFICINISTAS; j++) {
+        pthread_join(h_oficinistas[j], NULL);
     }
 
-    for (int i = 0; i < TOTAL_HILOS; i++) {
-        pthread_join(hilos[i], NULL);
-    }
+    // Limpieza
+    sem_destroy(&wrt);
+    sem_destroy(&mutex);
 
+    printf("Fin: %d pasajeros y %d oficinistas (cada uno %d veces).\n",
+           CANT_PASAJEROS, CANT_OFICINISTAS, MODS_POR_OFICINISTA);
     return 0;
 }
