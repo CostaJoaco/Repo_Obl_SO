@@ -1,31 +1,28 @@
 
-// Lectores-Escritores justo: prioridad a escritores con "torniquete".
+// Lectores-Escritores: pausa de lectores mientras escribe un oficinista.
 // Compilar: gcc -pthread -o po po.c
 
 #include <pthread.h>
 #include <semaphore.h>
 #include <stdio.h>
-#include <stdlib.h>
 
 #define CANT_PASAJEROS        100
 #define CANT_OFICINISTAS      5
 #define MODS_POR_OFICINISTA   3
 
-// Semáforos y estado
-sem_t torniquete;   // cierra el paso de nuevos lectores cuando hay escritores
-sem_t roomEmpty;    // exclusión total del recurso compartido (lectores/escritores)
-sem_t mutex;        // protege el contador 'lectores'
+// Semáforos y estado compartido
+sem_t pausaLectores; // el escritor lo toma para pausar el ingreso de nuevos lectores
+sem_t roomEmpty;     // exclusión total del recurso (sala vacía) para escribir
+sem_t mutex;         // protege el contador de lectores
 int lectores = 0;
 
-// --- Hilos ---
-
-// Pasajero = Lector (justo, bloqueado por torniquete si hay escritor esperando)
+// Pasajero = Lector
 void* pasajero(void* arg) {
     int id = *(int*)arg;
 
-    // Paso por el torniquete: si un escritor lo tomó, me bloqueo
-    sem_wait(&torniquete);
-    sem_post(&torniquete);
+    // Paso rápido por la "pausa": si hay escritor, me bloqueo; si no, sigo
+    sem_wait(&pausaLectores);
+    sem_post(&pausaLectores);
 
     // Entrada de lector (patrón clásico)
     sem_wait(&mutex);
@@ -51,42 +48,43 @@ void* pasajero(void* arg) {
     return NULL;
 }
 
-// Oficinista = Escritor (toma el torniquete para impedir nuevos lectores)
+// Oficinista = Escritor
 void* oficinista(void* arg) {
     int id = *(int*)arg;
+
     for (int m = 1; m <= MODS_POR_OFICINISTA; m++) {
-        // Cierro el torniquete: nadie nuevo entra, se vacía la sala de lectores
-        sem_wait(&torniquete);
-        // Espero a que la sala quede vacía
+        // Antes de escribir: bloqueo el paso de nuevos lectores
+        sem_wait(&pausaLectores);
+
+        // Espero a que la sala quede vacía (sin lectores) para escribir
         sem_wait(&roomEmpty);
 
         // Escritura exclusiva (solo mensaje)
         printf("Oficinista %d está escribiendo (mod %d)\n", id, m);
 
-        // Libero la sala y abro el torniquete
+        // Libero la sala y reanudo el paso de lectores
         sem_post(&roomEmpty);
-        sem_post(&torniquete);
+        sem_post(&pausaLectores);
     }
     return NULL;
 }
 
 int main(void) {
     // Inicialización
-    sem_init(&torniquete, 0, 1);  // abierto inicialmente
-    sem_init(&roomEmpty, 0, 1);   // sala vacía
-    sem_init(&mutex, 0, 1);       // protege 'lectores'
+    sem_init(&pausaLectores, 0, 1); // abierto al inicio (lectores pasan)
+    sem_init(&roomEmpty,     0, 1); // sala vacía disponible
+    sem_init(&mutex,         0, 1); // protege 'lectores'
 
     pthread_t h_pasajeros[CANT_PASAJEROS];
     pthread_t h_oficinistas[CANT_OFICINISTAS];
     int id_pasajeros[CANT_PASAJEROS];
     int id_oficinistas[CANT_OFICINISTAS];
 
-    // Crear 100 pasajeros
+    // Crear hilos (105 en total): 100 pasajeros y 5 oficinistas
     for (int i = 0; i < CANT_PASAJEROS; i++) {
         id_pasajeros[i] = i + 1;
         pthread_create(&h_pasajeros[i], NULL, pasajero, &id_pasajeros[i]);
     }
-    // Crear 5 oficinistas
     for (int j = 0; j < CANT_OFICINISTAS; j++) {
         id_oficinistas[j] = j + 1;
         pthread_create(&h_oficinistas[j], NULL, oficinista, &id_oficinistas[j]);
@@ -97,10 +95,11 @@ int main(void) {
     for (int j = 0; j < CANT_OFICINISTAS; j++) pthread_join(h_oficinistas[j], NULL);
 
     // Limpieza
-    sem_destroy(&torniquete);
+    sem_destroy(&pausaLectores);
     sem_destroy(&roomEmpty);
     sem_destroy(&mutex);
 
-    printf("Fin (justo): %d pasajeros y %d oficinistas (cada uno %d veces).\n",
+    printf("Fin: %d pasajeros y %d oficinistas (cada uno %d veces).\n",
            CANT_PASAJEROS, CANT_OFICINISTAS, MODS_POR_OFICINISTA);
     return 0;
+}
