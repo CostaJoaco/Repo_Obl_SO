@@ -9,21 +9,21 @@
 
 sem_t wrt;
 sem_t mutex;
-sem_t pausaLectores;
+sem_t pasoLectores;
+sem_t sinLectores;
 int rdr = 0;
 
 void* Lector(void* arg) {
     int id = *(int*)arg;
-    sem_wait(&pausaLectores);
-    sem_post(&pausaLectores);
+    sem_wait(&pasoLectores);
+    sem_post(&pasoLectores);
     sem_wait(&mutex);
     rdr++;
-    if (rdr == 1) sem_wait(&wrt);
     sem_post(&mutex);
     printf("Pasajero %d está viendo el cartel\n", id);
     sem_wait(&mutex);
     rdr--;
-    if (rdr == 0) sem_post(&wrt);
+    if (rdr == 0) sem_post(&sinLectores);
     sem_post(&mutex);
     return NULL;
 }
@@ -31,11 +31,18 @@ void* Lector(void* arg) {
 void* Escritor(void* arg) {
     int id = *(int*)arg;
     for (int k = 1; k <= ESCRITURAS_POR_OFICINISTA; k++) {
-        sem_wait(&pausaLectores);
         sem_wait(&wrt);
+        sem_wait(&pasoLectores);
+        sem_wait(&mutex);
+        if (rdr == 0) {
+            sem_post(&mutex);
+        } else {
+            sem_post(&mutex);
+            sem_wait(&sinLectores);
+        }
         printf("Oficinista %d está escribiendo (mod %d)\n", id, k);
+        sem_post(&pasoLectores);
         sem_post(&wrt);
-        sem_post(&pausaLectores);
     }
     return NULL;
 }
@@ -43,7 +50,8 @@ void* Escritor(void* arg) {
 int main(void) {
     sem_init(&wrt, 0, 1);
     sem_init(&mutex, 0, 1);
-    sem_init(&pausaLectores, 0, 1);
+    sem_init(&pasoLectores, 0, 1);
+    sem_init(&sinLectores, 0, 0);
 
     pthread_t hLectores[CANT_PASAJEROS];
     pthread_t hEscritores[CANT_OFICINISTAS];
@@ -64,7 +72,8 @@ int main(void) {
     for (int j = 0; j < CANT_OFICINISTAS; j++) pthread_join(hEscritores[j], NULL);
     for (int i = 0; i < CANT_PASAJEROS; i++) pthread_join(hLectores[i], NULL);
 
-    sem_destroy(&pausaLectores);
+    sem_destroy(&sinLectores);
+    sem_destroy(&pasoLectores);
     sem_destroy(&wrt);
     sem_destroy(&mutex);
 
