@@ -15,15 +15,14 @@ int rdr = 0;
 
 void* Lector(void* arg) {
     int id = *(int*)arg;
-    sem_wait(&pasoLectores);
-    sem_post(&pasoLectores);
     sem_wait(&mutex);
     rdr++;
+    if (rdr == 1) sem_wait(&wrt);
     sem_post(&mutex);
     printf("Pasajero %d está viendo el cartel\n", id);
     sem_wait(&mutex);
     rdr--;
-    if (rdr == 0) sem_post(&sinLectores);
+    if (rdr == 0) sem_post(&wrt);
     sem_post(&mutex);
     return NULL;
 }
@@ -32,20 +31,12 @@ void* Escritor(void* arg) {
     int id = *(int*)arg;
     for (int k = 1; k <= ESCRITURAS_POR_OFICINISTA; k++) {
         sem_wait(&wrt);
-        sem_wait(&pasoLectores);
-        sem_wait(&mutex);
-        if (rdr == 0) {
-            sem_post(&mutex);
-        } else {
-            sem_post(&mutex);
-            sem_wait(&sinLectores);
-        }
         printf("Oficinista %d está escribiendo (mod %d)\n", id, k);
-        sem_post(&pasoLectores);
         sem_post(&wrt);
     }
     return NULL;
 }
+
 
 int main(void) {
     sem_init(&wrt, 0, 1);
