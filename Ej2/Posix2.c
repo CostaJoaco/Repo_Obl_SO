@@ -20,12 +20,9 @@ int cant_escritores = 0;
 void* lector(void* arg) {
     int id = *(int*)arg;
 
-    sleep(rand() % 3);
-
     sem_wait(&mutex_escritores);
     while (cant_escritores > 0) {
         sem_post(&mutex_escritores);
-        sleep(5);
         sem_wait(&mutex_escritores);
     }
     sem_post(&mutex_escritores);
@@ -38,8 +35,7 @@ void* lector(void* arg) {
     sem_post(&mutex_lectores);
 
     printf("Pasajero %d esta mirando el cartel\n", id);
-    sleep(rand() % 2);
-
+    sleep(rand() % 3);
     sem_wait(&mutex_lectores);
     cant_lectores--;
     if (cant_lectores == 0) {
@@ -53,8 +49,6 @@ void* lector(void* arg) {
 void* escritor(void* arg) {
     int id = *(int*)arg;
 
-    sleep(rand() % 3);
-
     sem_wait(&mutex_escritores);
     cant_escritores++;
     sem_post(&mutex_escritores);
@@ -62,8 +56,7 @@ void* escritor(void* arg) {
     sem_wait(&wrt);
 
     printf("Oficinista %d esta modificando el cartel\n", id);
-    sleep(rand() % 2);
-
+    sleep(rand() % 5);
     sem_post(&wrt);
 
     sem_wait(&mutex_escritores);
